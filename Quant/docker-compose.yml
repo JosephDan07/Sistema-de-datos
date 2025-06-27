@@ -10,7 +10,8 @@ services:
       - "8888:8888"  # JupyterLab
       - "8050:8050"  # Dash apps
     volumes:
-      - ./Quant:/app/Quant
+      - ./"Machine Learning":/app/"Machine Learning"
+      - ./Datos:/app/Datos
       - ./sql:/app/sql
       - ./monitoring:/app/monitoring
       - ./data:/app/data

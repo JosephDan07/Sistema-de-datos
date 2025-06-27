@@ -71,10 +71,11 @@ RUN pip install --no-cache-dir \
     jupyter-dash
 
 # Copiar el código del proyecto completo
-COPY "Machine Learning"/ ./"Machine Learning"/
+COPY ["Machine Learning/", "./Machine Learning/"]
 COPY Datos/ ./Datos/
 COPY sql/ ./sql/
 COPY monitoring/ ./monitoring/
+COPY main.py ./
 COPY README-Docker.md ./
 
 # Configurar Jupyter para patrones
