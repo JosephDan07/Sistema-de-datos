@@ -1,0 +1,12 @@
+# Configuración para el análisis de patrones
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'pattern-analyzer'
+    static_configs:
+      - targets: ['pattern-analyzer:8888']
+  
+  - job_name: 'postgres-patterns'
+    static_configs:
+      - targets: ['postgres-patterns:5432']

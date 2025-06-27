@@ -1,0 +1,83 @@
+{
+  "family": "sistema-patrones-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "2048",
+  "memory": "4096",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "pattern-analyzer",
+      "image": "ACCOUNT.dkr.ecr.REGION.amazonaws.com/sistema-patrones:latest",
+      "portMappings": [
+        {
+          "containerPort": 8888,
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 8050,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "JUPYTER_TOKEN",
+          "value": "sistema-datos-aws-2025"
+        },
+        {
+          "name": "PYTHONPATH", 
+          "value": "/app/Quant:/app"
+        },
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "us-east-1"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT:secret:rds-db-credentials-xxx"
+        },
+        {
+          "name": "REDIS_URL", 
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT:secret:redis-credentials-xxx"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/sistema-patrones",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "mountPoints": [
+        {
+          "sourceVolume": "efs-data",
+          "containerPath": "/app/data"
+        },
+        {
+          "sourceVolume": "efs-results", 
+          "containerPath": "/app/results"
+        }
+      ]
+    }
+  ],
+  "volumes": [
+    {
+      "name": "efs-data",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-12345678",
+        "transitEncryption": "ENABLED"
+      }
+    },
+    {
+      "name": "efs-results",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-87654321", 
+        "transitEncryption": "ENABLED"
+      }
+    }
+  ]
+}
