@@ -1,4 +1,4 @@
-#!/workspaces/Sistema-de-datos/Cupula/bin/python3
+#!/workspaces/Sistema-de-datos/Quant/Cupula/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

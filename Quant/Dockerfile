@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar requirements.txt primero (para cache de Docker)
-COPY Quant/requirements.txt .
+COPY requirements.txt .
 
 # Instalar dependencias Python especializadas para patrones
 RUN pip install --no-cache-dir --upgrade pip && \
@@ -71,7 +71,8 @@ RUN pip install --no-cache-dir \
     jupyter-dash
 
 # Copiar el código del proyecto completo
-COPY Quant/ ./Quant/
+COPY "Machine Learning"/ ./"Machine Learning"/
+COPY Datos/ ./Datos/
 COPY sql/ ./sql/
 COPY monitoring/ ./monitoring/
 COPY README-Docker.md ./
@@ -90,7 +91,7 @@ EXPOSE 8888 8050
 RUN mkdir -p /app/data /app/results /app/models /app/logs
 
 # Establecer el PYTHONPATH correctamente
-ENV PYTHONPATH=/app/Quant:/app
+ENV PYTHONPATH=/app
 
 # Comando por defecto - JupyterLab para análisis interactivo
 CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]
