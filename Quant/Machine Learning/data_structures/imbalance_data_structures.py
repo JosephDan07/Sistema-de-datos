@@ -9,7 +9,10 @@ from typing import Union, Iterable, Optional
 import numpy as np
 import pandas as pd
 
-from .base_bars import BaseBars, ewma
+try:
+    from .base_bars import BaseBars, ewma
+except ImportError:
+    from base_bars import BaseBars, ewma
 
 
 class ImbalanceBars(BaseBars):

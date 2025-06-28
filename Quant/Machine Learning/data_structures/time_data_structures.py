@@ -10,7 +10,10 @@ from typing import Union, Iterable, Optional
 import numpy as np
 import pandas as pd
 
-from .base_bars import BaseBars
+try:
+    from .base_bars import BaseBars
+except ImportError:
+    from base_bars import BaseBars
 
 
 class TimeBars(BaseBars):

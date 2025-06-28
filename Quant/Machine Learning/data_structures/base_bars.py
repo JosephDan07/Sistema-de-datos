@@ -280,31 +280,6 @@ class BaseBars(ABC):
             raise ValueError('csv file, column 0, not a date time format:',
                              test_batch.iloc[0, 0])
 
-    def _update_high_low(self, price: float) -> Union[float, float]:
-        """
-        Update the high and low prices using the current price.
-
-        :param price: (float) Current price
-        :return: (tuple) Updated high and low prices
-        """
-
-        pass
-
-    def _create_bars(self, date_time: str, price: float, high_price: float, low_price: float, list_bars: list) -> None:
-        """
-        Given the inputs, construct a bar which has the following fields: date_time, open, high, low, close, volume,
-        cum_buy_volume, cum_ticks, cum_dollar_value.
-        These bars are appended to list_bars, which is later used to construct the final bars DataFrame.
-
-        :param date_time: (str) Timestamp of the bar
-        :param price: (float) The current price
-        :param high_price: (float) Highest price in the period
-        :param low_price: (float) Lowest price in the period
-        :param list_bars: (list) List to which we append the bars
-        """
-
-        pass
-
     def _apply_tick_rule(self, price: float) -> int:
         """
         Applies the tick rule as defined on page 29 of Advances in Financial Machine Learning.
@@ -312,8 +287,14 @@ class BaseBars(ABC):
         :param price: (float) Price at time t
         :return: (int) The signed tick
         """
-
-        pass
+        if self.prev_price is None:
+            return 1
+        elif price > self.prev_price:
+            return 1
+        elif price < self.prev_price:
+            return -1
+        else:
+            return 0
 
     def _get_imbalance(self, price: float, signed_tick: int, volume: float) -> float:
         """
@@ -326,8 +307,7 @@ class BaseBars(ABC):
         :param volume: (float) Volume traded at t
         :return: (float) Imbalance at time t
         """
-
-        pass
+        return signed_tick * volume
 
 
 class BaseImbalanceBars(BaseBars):
@@ -349,25 +329,26 @@ class BaseImbalanceBars(BaseBars):
         :param analyse_thresholds: (bool) Flag to return thresholds values (theta, exp_num_ticks, exp_imbalance) in a
                                           form of Pandas DataFrame
         """
-
-        pass
+        super().__init__(metric, batch_size)
+        self.expected_imbalance_window = expected_imbalance_window
+        self.exp_num_ticks_init = exp_num_ticks_init
+        self.analyse_thresholds = analyse_thresholds
 
     def _reset_cache(self):
         """
         Implementation of abstract method _reset_cache for imbalance bars
         """
+        super()._reset_cache()
 
-        pass
-
-    def _extract_bars(self, data: Tuple[dict, pd.DataFrame]) -> list:
+    def _extract_bars(self, data: pd.DataFrame) -> list:
         """
         For loop which compiles the various imbalance bars: dollar, volume, or tick.
 
         :param data: (pd.DataFrame) Contains 3 columns - date_time, price, and volume.
         :return: (list) Bars built using the current batch.
         """
-
-        pass
+        # This will be implemented in concrete subclasses
+        raise NotImplementedError("Subclasses must implement _extract_bars")
 
     def _get_expected_imbalance(self, window: int):
         """
@@ -375,8 +356,9 @@ class BaseImbalanceBars(BaseBars):
         :param window: (int) EWMA window for calculation
         :return: expected_imbalance: (np.ndarray) 2P[b_t=1]-1, approximated using a EWMA
         """
-
-        pass
+        if len(self.expected_imbalance_window) < window:
+            return np.nan
+        return np.mean(self.expected_imbalance_window[-window:])
 
     @abstractmethod
     def _get_exp_num_ticks(self):
@@ -385,7 +367,6 @@ class BaseImbalanceBars(BaseBars):
         """
 
 
-# pylint: disable=too-many-instance-attributes
 class BaseRunBars(BaseBars):
     """
     Base class for Run Bars (EMA and Const) which implements run bars calculation logic
@@ -404,26 +385,27 @@ class BaseRunBars(BaseBars):
                                          For Const Imbalance Bars expected number of ticks equals expected number of ticks init
         :param analyse_thresholds: (bool) Flag to return thresholds values (thetas, exp_num_ticks, exp_runs) in Pandas DataFrame
         """
-
-        pass
+        super().__init__(metric, batch_size)
+        self.num_prev_bars = num_prev_bars
+        self.expected_imbalance_window = expected_imbalance_window
+        self.exp_num_ticks_init = exp_num_ticks_init
+        self.analyse_thresholds = analyse_thresholds
 
     def _reset_cache(self):
         """
         Implementation of abstract method _reset_cache for imbalance bars
         """
+        super()._reset_cache()
 
-        pass
-
-    def _extract_bars(self, data: Tuple[list, np.ndarray]) -> list:
+    def _extract_bars(self, data: pd.DataFrame) -> list:
         """
         For loop which compiles the various run bars: dollar, volume, or tick.
 
-        :param data: (list or np.ndarray) Contains 3 columns - date_time, price, and volume.
+        :param data: (pd.DataFrame) Contains 3 columns - date_time, price, and volume.
         :return: (list) of bars built using the current batch.
         """
-
-
-        pass
+        # This will be implemented in concrete subclasses
+        raise NotImplementedError("Subclasses must implement _extract_bars")
 
     def _get_expected_imbalance(self, array: list, window: int, warm_up: bool = False):
         """
@@ -433,11 +415,12 @@ class BaseRunBars(BaseBars):
 
         :param array: (list) of imbalances
         :param window: (int) EWMA window for calculation
-        :parawm warm_up: (bool) flag of whether warm up period passed
+        :param warm_up: (bool) flag of whether warm up period passed
         :return: expected_imbalance: (np.ndarray) 2P[b_t=1]-1, approximated using a EWMA
         """
-
-        pass
+        if len(array) < window:
+            return np.nan
+        return np.mean(array[-window:])
 
     @abstractmethod
     def _get_exp_num_ticks(self):
