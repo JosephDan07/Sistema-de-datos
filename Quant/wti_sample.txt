@@ -1,0 +1,6 @@
+Columnas: ['NYMEX Light Sweet Crude Oil (WTI) Electronic Energy Future Continuation 1 | Price History                                          25-Jun-2025 19:03']
+Datos:
+  NYMEX Light Sweet Crude Oil (WTI) Electronic Energy Future Continuation 1 | Price History                                          25-Jun-2025 19:03
+0                                                NaN                                                                                                  
+1                                                NaN                                                                                                  
+2                                               CLc1                                                                                                  

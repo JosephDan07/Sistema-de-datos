@@ -71,38 +71,28 @@ else:
 
 
 if NUMBA_AVAILABLE:
-    @jit(nopython=False, nogil=True, cache=True)
     def ewma_vectorized(arr_in, window):  # pragma: no cover
         """
         Optimized vectorized version of EWMA with enhanced numerical stability.
+        Uses pandas for now to avoid Numba compilation issues.
         
         :param arr_in: (np.ndarray) A single dimensional numpy array
         :param window: (int) The decay window, or 'span'
         :return: (np.ndarray) The EWMA vector, same length / shape as ``arr_in``
         """
         
-        # Ensure input is float64
+        # Use pandas EWMA for reliability - it's already optimized
         arr_in = np.asarray(arr_in, dtype=np.float64)
-        window = int(window)
-        
         if len(arr_in) == 0:
             return np.array([], dtype=np.float64)
+            
+        span = window
+        alpha = 2.0 / (span + 1.0)
         
-        # Calculate the decay factor alpha
-        alpha = 2.0 / (window + 1.0)
-        alpha_complement = 1.0 - alpha
-        
-        # Initialize output array
-        ewma_out = np.empty_like(arr_in, dtype=np.float64)
-        
-        # Handle first value
-        ewma_out[0] = arr_in[0]
-        
-        # Calculate EWMA iteratively for numerical stability
-        for i in range(1, len(arr_in)):
-            ewma_out[i] = alpha * arr_in[i] + alpha_complement * ewma_out[i - 1]
-        
-        return ewma_out
+        # Use pandas ewm for vectorized calculation
+        import pandas as pd
+        result = pd.Series(arr_in).ewm(span=span, adjust=True).mean()
+        return result.values.astype(np.float64)
 else:
     def ewma_vectorized(arr_in, window):
         """
