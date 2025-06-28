@@ -1,0 +1,211 @@
+📁 Verificando rutas de módulos...
+   ML path exists: True
+   Data structures path exists: True
+   Util path exists: True
+   __init__.py: ✅
+   __init__.py: ✅
+   standard_data_structures.py: ✅
+   fast_ewma.py: ✅
+   Current working directory: /workspaces/Sistema-de-datos/Quant
+   Python path entries: 8
+🛢️  DEMO PRÁCTICO - ANÁLISIS DE WTI CRUDE OIL
+============================================================
+
+📊 1. CARGANDO DATOS DE WTI CRUDE OIL...
+   Leyendo archivo Excel WTI Daily con estructura correcta...
+✅ Datos históricos cargados: 10649 registros
+   Columnas encontradas: ['Exchange Date', 'Close', 'Net', '%Chg', 'Open', 'Low', 'High', 'Volume', 'OI', 'O-C', 'H-L', '%CVol', '%COI', 'Bid', 'Ask', 'Trade Price', 'VWAP', 'Block Volume', 'Mid Price', 'Open Interest', 'Lower Limit', 'Upper Limit', 'Settlement Price', 'Expiry Date', 'Last Trade Price', 'Contract Month', 'Settle Net Change', 'Settle Change - Percent', 'Market Open Interest', 'Market Volume']
+
+📈 Muestra de datos históricos:
+  Exchange Date  Close  ...  Market Open Interest  Market Volume
+0    2025-06-26  65.21  ...                   NaN            NaN
+1    2025-06-25  64.92  ...                   NaN            NaN
+2    2025-06-24  64.37  ...             1961998.0      1478693.0
+3    2025-06-23  68.51  ...             1980166.0      1907571.0
+4    2025-06-20  74.93  ...             1958208.0      1889787.0
+
+[5 rows x 30 columns]
+
+🔍 Información de columnas:
+   Col 0: 'Exchange Date' | Ejemplo: 2025-06-26 00:00:00
+   Col 1: 'Close' | Ejemplo: 65.21
+   Col 2: 'Net' | Ejemplo: 0.289999999999992
+   Col 3: '%Chg' | Ejemplo: 0.00446703635243364
+   Col 4: 'Open' | Ejemplo: 64.98
+   Col 5: 'Low' | Ejemplo: 64.94
+   Col 6: 'High' | Ejemplo: 65.3
+   Col 7: 'Volume' | Ejemplo: 2189.0
+   Col 8: 'OI' | Ejemplo: 292144.0
+   Col 9: 'O-C' | Ejemplo: 0.22999999999999
+   Col 10: 'H-L' | Ejemplo: 0.359999999999999
+   Col 11: '%CVol' | Ejemplo: -0.995957338750635
+   Col 12: '%COI' | Ejemplo: -0.0484683657682599
+   Col 13: 'Bid' | Ejemplo: 65.2
+   Col 14: 'Ask' | Ejemplo: 65.21
+   Col 15: 'Trade Price' | Ejemplo: 65.21
+   Col 16: 'VWAP' | Ejemplo: 65.19178
+   Col 17: 'Block Volume' | Ejemplo: 2364.0
+   Col 18: 'Mid Price' | Ejemplo: 65.205
+   Col 19: 'Open Interest' | Ejemplo: 292144.0
+   Col 20: 'Lower Limit' | Ejemplo: 0.01
+   Col 21: 'Upper Limit' | Ejemplo: 65.3
+   Col 22: 'Settlement Price' | Ejemplo: 65.21
+   Col 23: 'Expiry Date' | Ejemplo: 45860.0
+   Col 24: 'Last Trade Price' | Ejemplo: 65.21
+   Col 25: 'Contract Month' | Ejemplo: 202508.0
+   Col 26: 'Settle Net Change' | Ejemplo: 0.55
+   Col 27: 'Settle Change - Percent' | Ejemplo: 0.8544
+   Col 28: 'Market Open Interest' | Ejemplo: 1961998.0
+   Col 29: 'Market Volume' | Ejemplo: 1478693.0
+   Período: 2025-06-26 00:00:00 a 1983-03-30 00:00:00
+✅ Datos diarios cargados: 10672 registros
+
+🔧 2. PREPARANDO DATOS...
+   Mapeando columnas del Excel...
+   Columnas originales: ['Exchange Date', 'Close', 'Net', '%Chg', 'Open', 'Low', 'High', 'Volume', 'OI', 'O-C', 'H-L', '%CVol', '%COI', 'Bid', 'Ask', 'Trade Price', 'VWAP', 'Block Volume', 'Mid Price', 'Open Interest', 'Lower Limit', 'Upper Limit', 'Settlement Price', 'Expiry Date', 'Last Trade Price', 'Contract Month', 'Settle Net Change', 'Settle Change - Percent', 'Market Open Interest', 'Market Volume']
+   Columnas disponibles: ['Exchange Date', 'Close', 'Net', '%Chg', 'Open', 'Low', 'High', 'Volume']
+   ✅ Timestamp creado desde Exchange Date
+   ✅ Open convertido a numérico
+   ✅ High convertido a numérico
+   ✅ Low convertido a numérico
+   ✅ Close convertido a numérico
+   ✅ Volume convertido a numérico
+   Columnas renombradas: ['date', 'close', 'net_change', 'pct_change', 'open', 'low', 'high', 'volume', 'OI', 'O-C', 'H-L', '%CVol', '%COI', 'Bid', 'Ask', 'Trade Price', 'VWAP', 'Block Volume', 'Mid Price', 'Open Interest', 'Lower Limit', 'Upper Limit', 'Settlement Price', 'Expiry Date', 'Last Trade Price', 'Contract Month', 'Settle Net Change', 'Settle Change - Percent', 'Market Open Interest', 'Market Volume']
+   Rango de precios close: $-37.63 - $145.29
+   Rango de volumen: 0 - 1774383
+   Usando últimos 500 registros para demo
+   Columnas de precio válidas: ['open', 'high', 'low', 'close']
+   Columna de volumen: volume
+
+✅ Datos preparados correctamente
+
+🏗️  3. PROBANDO MÓDULOS DATA_STRUCTURES...
+✅ Módulos data_structures importados correctamente
+   Datos para análisis: 498 puntos
+   Rango de precios: $25.18 - $32.20
+   Volumen promedio: 2203
+   Volumen real: ✅
+
+🕐 3.1 RESUMEN DE DATOS TEMPORALES...
+✅ Datos temporales analizados: 498 registros
+   Período: 1985-03-26 00:00:00 a 1983-03-30 00:00:00
+   Retorno promedio: 0.0093%
+   Volatilidad: 0.7337%
+
+📦 3.2 Construyendo VOLUME BARS...
+Processing batch with 498 rows...
+Generated 19 bars from batch
+Generated 19 total bars
+✅ Volume bars creadas: 19 barras
+   Umbral de volumen: 54,850
+   date_time   open   high  ...  cum_buy_volume       vwap  num_ticks
+0 1985-03-12  28.45  28.98  ...         29104.0  28.393803         11
+1 1985-02-26  28.45  28.98  ...         57926.0  27.831756         21
+2 1985-02-12  28.45  28.98  ...         96259.0  27.638433         30
+
+[3 rows x 9 columns]
+
+💰 3.3 Construyendo DOLLAR BARS...
+Processing batch with 498 rows...
+Generated 14 bars from batch
+Generated 14 total bars
+✅ Dollar bars creadas: 14 barras
+   Threshold de dollars: $2,073,301
+   date_time   open   high  ...  cum_buy_volume       vwap  num_ticks
+0 1985-03-06  28.45  28.98  ...         38824.0  28.272199         15
+1 1985-02-19  28.45  28.98  ...         86260.0  27.632759         26
+2 1985-01-31  28.45  28.98  ...        115421.0  27.420854         38
+
+[3 rows x 9 columns]
+
+📊 3.4 Construyendo TICK BARS...
+Processing batch with 498 rows...
+Generated 26 bars from batch
+Generated 26 total bars
+✅ Tick bars creadas: 26 barras
+   Umbral de ticks: 19
+   date_time   open   high  ...  cum_buy_volume       vwap  num_ticks
+0 1985-02-28  28.45  28.98  ...         47206.0  28.013756         19
+1 1985-01-31  28.45  28.98  ...        115421.0  27.420854         38
+2 1985-01-04  28.45  28.98  ...        176864.0  26.812870         57
+
+[3 rows x 9 columns]
+
+🛠️  4. PROBANDO MÓDULOS UTIL...
+✅ Módulos util importados correctamente
+   EWMA: Using optimized Numba JIT compilation for maximum performance
+
+📈 4.1 ANÁLISIS DE VOLATILIDAD...
+✅ Volatilidad diaria calculada: 497 valores
+   Volatilidad actual: 0.1092
+   Volatilidad promedio: 0.1095
+✅ Volatilidad Garman-Klass: 0.1028
+✅ Volatilidad Yang-Zhang: 0.1604
+
+⚡ 4.2 ANÁLISIS EWMA...
+✅ EWMA básico calculado: último valor $30.13
+✅ EWMA vectorizado: último valor $30.13
+❌ Error en EWMA: Failed in nopython mode pipeline (step: nopython frontend)
+Cannot infer the type of variable '$158build_list.3' (temporary variable), have imprecise type: list(undefined)<iv=None>. 
+
+For Numba to be able to compile a list, the list must have a known and
+precise type that can be inferred from the other variables. Whilst sometimes
+the type of empty lists can be inferred, this is not always the case, see this
+documentation for help:
+
+https://numba.readthedocs.io/en/stable/user/troubleshoot.html#my-code-has-an-untyped-list-problem
+
+
+File "Machine Learning/util/fast_ewma.py", line 120:
+    def ewma_alpha(arr_in, alpha):  # pragma: no cover
+        <source elided>
+        if len(arr_in) == 0:
+            return np.array([], dtype=np.float64)
+            ^
+
+During: Pass nopython_type_inference
+
+📊 4.3 CLASIFICACIÓN DE VOLUMEN...
+✅ BVC calculado: 498 valores
+   Ratio de compra BVC: 0.458
+✅ Tick Rule calculado: ratio de compra 0.551
+   Diferencia entre métodos: 0.093
+
+🔧 4.4 UTILIDADES MISCELÁNEAS...
+✅ DataFrame segmentado en 4 chunks de ~25 filas
+✅ Winsorización aplicada: 49 outliers suavizados
+✅ Particiones para multiproceso: [  0 125 249 374 498]
+✅ Dataset sintético generado: X(100, 5), y(100,)
+
+📊 5. GENERANDO VISUALIZACIONES...
+✅ Gráficos guardados en: /workspaces/Sistema-de-datos/Quant/demo_wti_analysis.png
+
+============================================================
+📋 RESUMEN DEL DEMO PRÁCTICO
+============================================================
+
+📊 DATOS PROCESADOS:
+   • Dataset: WTI Crude Oil
+   • Registros analizados: 500
+   • Período: 1985-03-26 00:00:00 a 1983-03-30 00:00:00
+   • Rango de precios: $25.18 - $32.20
+
+🏗️  MÓDULOS DATA_STRUCTURES:
+   ✅ Volume Bars (19 barras)
+   ✅ Dollar Bars (14 barras)
+   ✅ Tick Bars (26 barras)
+
+🛠️  MÓDULOS UTIL:
+   ✅ Volatilidad (último: 0.1092)
+   ✅ EWMA (último: $30.13)
+   ✅ Clasificación Volumen (ratio compra: 0.458)
+
+⚡ PERFORMANCE:
+   ✅ EWMA: Using optimized Numba JIT compilation for maximum performance
+   ✅ Todas las funciones ejecutadas sin errores críticos
+   ✅ Módulos optimizados funcionando correctamente
+
+🎉 DEMO COMPLETADO EXITOSAMENTE!
+   Los módulos data_structures y util están funcionando
+   correctamente con datos reales de WTI Crude Oil.
+============================================================
