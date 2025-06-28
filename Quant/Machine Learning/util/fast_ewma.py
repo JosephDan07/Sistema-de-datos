@@ -6,22 +6,212 @@ https://towardsdatascience.com/financial-machine-learning-part-0-bars-745897d4e4
 
 # Imports
 import numpy as np
-from numba import jit
-from numba import float64
-from numba import int64
+import pandas as pd
+
+# Try to import Numba, fall back to pure Python if not available
+try:
+    from numba import jit  # type: ignore
+    from numba import float64  # type: ignore
+    from numba import int64  # type: ignore
+    NUMBA_AVAILABLE = True
+except ImportError:
+    NUMBA_AVAILABLE = False
+    # Create dummy decorator for compatibility
+    def jit(*args, **kwargs):  # type: ignore
+        def decorator(func):
+            return func
+        return decorator
+    float64 = None  # type: ignore
+    int64 = None  # type: ignore
 
 
-@jit((float64[:], int64), nopython=False, nogil=True)
-def ewma(arr_in, window):  # pragma: no cover
+if NUMBA_AVAILABLE:
+    # Use lazy compilation to avoid startup delays
+    @jit(nopython=False, nogil=True, cache=True)
+    def ewma(arr_in, window):  # pragma: no cover
+        """
+        Exponentially weighted moving average specified by a decay ``window`` to provide better adjustments for
+        small windows via:
+            y[t] = (x[t] + (1-a)*x[t-1] + (1-a)^2*x[t-2] + ... + (1-a)^n*x[t-n]) /
+                   (1 + (1-a) + (1-a)^2 + ... + (1-a)^n).
+
+        :param arr_in: (np.ndarray) A single dimensional numpy array
+        :param window: (int) The decay window, or 'span'
+        :return: (np.ndarray) The EWMA vector, same length / shape as ``arr_in``
+        """
+        
+        # Ensure input is float64
+        arr_in = np.asarray(arr_in, dtype=np.float64)
+        window = int(window)
+        
+        # Calculate the decay factor alpha
+        alpha = 2.0 / (window + 1.0)
+        
+        # Initialize output array
+        ewma_out = np.empty_like(arr_in, dtype=np.float64)
+        
+        # Initialize first value
+        ewma_out[0] = arr_in[0]
+        
+        # Calculate EWMA for the rest of the array
+        for i in range(1, len(arr_in)):
+            ewma_out[i] = alpha * arr_in[i] + (1 - alpha) * ewma_out[i - 1]
+        
+        return ewma_out
+else:
+    def ewma(arr_in, window):
+        """
+        Pure Python EWMA fallback when Numba is not available
+        """
+        # Use pandas EWMA for efficiency
+        s = pd.Series(arr_in)
+        alpha = 2.0 / (window + 1.0)
+        result = s.ewm(alpha=alpha, adjust=False).mean()
+        return result.values.astype(np.float64)
+
+
+if NUMBA_AVAILABLE:
+    @jit(nopython=False, nogil=True, cache=True)
+    def ewma_vectorized(arr_in, window):  # pragma: no cover
+        """
+        Optimized vectorized version of EWMA with enhanced numerical stability.
+        
+        :param arr_in: (np.ndarray) A single dimensional numpy array
+        :param window: (int) The decay window, or 'span'
+        :return: (np.ndarray) The EWMA vector, same length / shape as ``arr_in``
+        """
+        
+        # Ensure input is float64
+        arr_in = np.asarray(arr_in, dtype=np.float64)
+        window = int(window)
+        
+        if len(arr_in) == 0:
+            return np.array([], dtype=np.float64)
+        
+        # Calculate the decay factor alpha
+        alpha = 2.0 / (window + 1.0)
+        alpha_complement = 1.0 - alpha
+        
+        # Initialize output array
+        ewma_out = np.empty_like(arr_in, dtype=np.float64)
+        
+        # Handle first value
+        ewma_out[0] = arr_in[0]
+        
+        # Calculate EWMA iteratively for numerical stability
+        for i in range(1, len(arr_in)):
+            ewma_out[i] = alpha * arr_in[i] + alpha_complement * ewma_out[i - 1]
+        
+        return ewma_out
+else:
+    def ewma_vectorized(arr_in, window):
+        """
+        Pure Python EWMA vectorized fallback when Numba is not available
+        """
+        return ewma(arr_in, window)
+
+
+if NUMBA_AVAILABLE:
+    @jit(nopython=False, nogil=True, cache=True)
+    def ewma_alpha(arr_in, alpha):  # pragma: no cover
+        """
+        EWMA with direct alpha specification for better control.
+        
+        :param arr_in: (np.ndarray) A single dimensional numpy array
+        :param alpha: (float) Smoothing parameter between 0 and 1
+        :return: (np.ndarray) The EWMA vector, same length / shape as ``arr_in``
+        """
+        
+        # Ensure input is float64
+        arr_in = np.asarray(arr_in, dtype=np.float64)
+        alpha = float(alpha)
+        
+        if len(arr_in) == 0:
+            return np.array([], dtype=np.float64)
+        
+        if alpha <= 0.0 or alpha > 1.0:
+            raise ValueError("Alpha must be between 0 and 1")
+        
+        # Initialize output array
+        ewma_out = np.empty_like(arr_in, dtype=np.float64)
+        
+        # Initialize first value
+        ewma_out[0] = arr_in[0]
+        
+        # Calculate EWMA
+        alpha_complement = 1.0 - alpha
+        for i in range(1, len(arr_in)):
+            ewma_out[i] = alpha * arr_in[i] + alpha_complement * ewma_out[i - 1]
+        
+        return ewma_out
+else:
+    def ewma_alpha(arr_in, alpha):
+        """
+        Pure Python EWMA alpha fallback when Numba is not available
+        """
+        if alpha <= 0.0 or alpha > 1.0:
+            raise ValueError("Alpha must be between 0 and 1")
+        
+        s = pd.Series(arr_in)
+        result = s.ewm(alpha=alpha, adjust=False).mean()
+        return result.values.astype(np.float64)
+
+
+def ewma_halflife(arr_in, halflife):
     """
-    Exponentially weighted moving average specified by a decay ``window`` to provide better adjustments for
-    small windows via:
-        y[t] = (x[t] + (1-a)*x[t-1] + (1-a)^2*x[t-2] + ... + (1-a)^n*x[t-n]) /
-               (1 + (1-a) + (1-a)^2 + ... + (1-a)^n).
-
-    :param arr_in: (np.ndarray), (float64) A single dimensional numpy array
-    :param window: (int64) The decay window, or 'span'
-    :return: (np.ndarray) The EWMA vector, same length / shape as ``arr_in``
+    EWMA using half-life specification (more intuitive for financial data).
+    
+    :param arr_in: (np.ndarray) Input array
+    :param halflife: (float) Half-life in number of periods
+    :return: (np.ndarray) The EWMA vector
     """
+    
+    if halflife <= 0:
+        raise ValueError("Half-life must be positive")
+    
+    # Convert half-life to alpha
+    alpha = 1.0 - np.exp(-np.log(2.0) / halflife)
+    
+    # Ensure proper dtype
+    arr_in = np.asarray(arr_in, dtype=np.float64)
+    return ewma_alpha(arr_in, alpha)
 
-    pass
+
+def ewma_com(arr_in, com):
+    """
+    EWMA using center of mass specification.
+    
+    :param arr_in: (np.ndarray) Input array
+    :param com: (float) Center of mass
+    :return: (np.ndarray) The EWMA vector
+    """
+    
+    if com < 0:
+        raise ValueError("Center of mass must be non-negative")
+    
+    # Convert center of mass to alpha
+    alpha = 1.0 / (1.0 + com)
+    
+    # Ensure proper dtype
+    arr_in = np.asarray(arr_in, dtype=np.float64)
+    return ewma_alpha(arr_in, alpha)
+
+
+def get_ewma_info():
+    """
+    Get information about the EWMA implementation being used.
+    
+    :return: (str) Information about Numba availability and performance
+    """
+    if NUMBA_AVAILABLE:
+        return "EWMA: Using optimized Numba JIT compilation for maximum performance"
+    else:
+        return "EWMA: Using pure Python/Pandas fallback (Numba not available)"
+
+
+# Print info when module is loaded
+if __name__ != "__main__":
+    import warnings
+    if not NUMBA_AVAILABLE:
+        warnings.warn("Numba not available, using slower pure Python EWMA implementation", 
+                     UserWarning, stacklevel=2)

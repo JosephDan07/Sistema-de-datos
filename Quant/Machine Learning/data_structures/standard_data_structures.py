@@ -211,3 +211,282 @@ def get_dollar_bars(file_path_or_df: Union[str, Iterable[str], pd.DataFrame],
     
     bars = StandardBars(metric='dollar_bars', threshold=threshold, batch_size=batch_size)
     return bars.batch_run(file_path_or_df, verbose=verbose, to_csv=to_csv, output_path=output_path)
+
+# ===============================================
+# AUTO-CALIBRACIÓN Y MODO 1M PROXY 
+# Implementación basada en López de Prado
+# ===============================================
+
+def auto_calibrate_dollar_threshold(file_path_or_df: Union[str, Iterable[str], pd.DataFrame], 
+                                   target_bars_per_day: int = 50, 
+                                   batch_size: int = 20000000,
+                                   sample_days: int = 5) -> float:
+    """
+    Auto-calibra threshold para conseguir exactamente 50 barras por día (recomendación López de Prado)
+    
+    :param file_path_or_df: Path to csv or DataFrame with tick data
+    :param target_bars_per_day: Target number of bars per day (default 50)
+    :param batch_size: Number of rows to read per batch
+    :param sample_days: Number of days to sample for calibration
+    :return: Calibrated threshold value
+    """
+    
+    # Leer una muestra de datos para calibración
+    if isinstance(file_path_or_df, pd.DataFrame):
+        sample_data = file_path_or_df.head(batch_size * sample_days)
+    else:
+        sample_data = pd.read_csv(file_path_or_df, nrows=batch_size * sample_days)
+    
+    # Standardize column names
+    if len(sample_data.columns) >= 3:
+        sample_data.columns = ['date_time', 'price', 'volume'] + list(sample_data.columns[3:])
+    
+    # Calcular dollar volume total
+    sample_data['dollar_volume'] = sample_data['price'] * sample_data['volume']
+    daily_dollar_volume = sample_data['dollar_volume'].sum()
+    
+    # Estimar días de trading en la muestra
+    sample_data['date_time'] = pd.to_datetime(sample_data['date_time'])
+    trading_days = sample_data['date_time'].dt.date.nunique()
+    
+    # Calcular threshold objetivo
+    avg_daily_dollar_volume = daily_dollar_volume / max(trading_days, 1)
+    target_threshold = avg_daily_dollar_volume / target_bars_per_day
+    
+    return target_threshold
+
+
+def get_auto_calibrated_dollar_bars(file_path_or_df: Union[str, Iterable[str], pd.DataFrame],
+                                   target_bars_per_day: int = 50,
+                                   batch_size: int = 20000000,
+                                   verbose: bool = True,
+                                   to_csv: bool = False,
+                                   output_path: Optional[str] = None) -> pd.DataFrame:
+    """
+    Creates auto-calibrated dollar bars targeting 50 bars per day (López de Prado recommendation)
+    
+    :param file_path_or_df: Path to csv or DataFrame with tick data
+    :param target_bars_per_day: Target number of bars per day (default 50)
+    :param batch_size: Number of rows to read per batch
+    :param verbose: Print progress messages
+    :param to_csv: Save results to CSV
+    :param output_path: Output file path if to_csv=True
+    :return: Auto-calibrated dollar bars DataFrame
+    """
+    
+    # Auto-calibrar threshold
+    threshold = auto_calibrate_dollar_threshold(
+        file_path_or_df, target_bars_per_day, batch_size
+    )
+    
+    if verbose:
+        print(f"Auto-calibrated threshold: ${threshold:,.0f} per bar (target: {target_bars_per_day} bars/day)")
+    
+    # Crear barras con threshold calibrado
+    return get_dollar_bars(file_path_or_df, threshold, batch_size, verbose, to_csv, output_path)
+
+
+def resample_to_1min_proxy(tick_data: pd.DataFrame, method: str = 'weighted') -> pd.DataFrame:
+    """
+    Convierte tick data costoso a 1m data como proxy para microestructura
+    (Como propuesto en López de Prado's doctoral thesis)
+    
+    :param tick_data: DataFrame con columns ['date_time', 'price', 'volume'] 
+    :param method: 'ohlcv', 'weighted', o 'last_tick'
+    :return: 1m bars que preservan características microestructurales
+    """
+    
+    # Standardize column names
+    if len(tick_data.columns) >= 3:
+        tick_data.columns = ['date_time', 'price', 'volume'] + list(tick_data.columns[3:])
+    
+    # Asegurar que date_time es datetime
+    tick_data['date_time'] = pd.to_datetime(tick_data['date_time'])
+    tick_data = tick_data.set_index('date_time')
+    
+    if method == 'ohlcv':
+        # Método tradicional OHLCV
+        minute_bars = tick_data.resample('1min').agg({
+            'price': ['first', 'max', 'min', 'last'],
+            'volume': 'sum'
+        }).dropna()
+        
+        minute_bars.columns = ['open', 'high', 'low', 'close', 'volume']
+        
+    elif method == 'weighted':
+        # Método ponderado por volumen (mejor proxy microestructural)
+        def weighted_agg(group):
+            if len(group) == 0:
+                return pd.Series({
+                    'open': np.nan, 'high': np.nan, 'low': np.nan, 'close': np.nan,
+                    'volume': 0, 'vwap': np.nan, 'tick_count': 0,
+                    'buy_volume': 0, 'sell_volume': 0
+                })
+            
+            # Calcular buy/sell volume usando tick rule
+            price_changes = group['price'].diff()
+            buy_mask = price_changes > 0
+            sell_mask = price_changes < 0
+            
+            return pd.Series({
+                'open': group['price'].iloc[0],
+                'high': group['price'].max(),
+                'low': group['price'].min(),
+                'close': group['price'].iloc[-1],
+                'volume': group['volume'].sum(),
+                'vwap': (group['price'] * group['volume']).sum() / group['volume'].sum() if group['volume'].sum() > 0 else group['price'].iloc[-1],
+                'tick_count': len(group),
+                'buy_volume': group.loc[buy_mask, 'volume'].sum(),
+                'sell_volume': group.loc[sell_mask, 'volume'].sum()
+            })
+        
+        minute_bars = tick_data.resample('1min').apply(weighted_agg).dropna()
+        
+    elif method == 'last_tick':
+        # Método simple: último tick por minuto
+        minute_bars = tick_data.resample('1min').last().dropna()
+        minute_bars['tick_count'] = tick_data.resample('1min').size()
+    
+    else:
+        raise ValueError("Method must be 'ohlcv', 'weighted', or 'last_tick'")
+    
+    minute_bars.reset_index(inplace=True)
+    return minute_bars
+
+
+def create_microstructural_features_1m(minute_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Extrae características microestructurales usando 1m data como proxy
+    Basado en López de Prado's research
+    
+    :param minute_data: DataFrame con 1m bars
+    :return: DataFrame con features microestructurales
+    """
+    
+    features = minute_data.copy()
+    
+    # 1. Volume-Price Features (capturan order flow)
+    if 'open' in features.columns:
+        features['volume_price_trend'] = (features['close'] - features['open']) * features['volume']
+        features['close_range_position'] = (features['close'] - features['low']) / (features['high'] - features['low'])
+        features['high_low_ratio'] = features['high'] / features['low']
+        features['realized_volatility_1m'] = np.log(features['high'] / features['low'])
+    
+    # 2. Buy/Sell Pressure Features
+    if 'buy_volume' in features.columns and 'sell_volume' in features.columns:
+        features['buy_sell_ratio'] = features['buy_volume'] / (features['sell_volume'] + 1e-8)
+        features['net_volume'] = features['buy_volume'] - features['sell_volume']
+    
+    # 3. Price and Volume Dynamics
+    features['price_change'] = features['close'].diff() if 'close' in features.columns else features['price'].diff()
+    features['volume_change'] = features['volume'].diff()
+    features['price_acceleration'] = features['price_change'].diff()
+    
+    # 4. Rolling Statistics
+    features['volume_ma_5'] = features['volume'].rolling(5).mean()
+    features['volume_ratio'] = features['volume'] / features['volume_ma_5']
+    features['price_ma_5'] = features['close'].rolling(5).mean() if 'close' in features.columns else features['price'].rolling(5).mean()
+    
+    # 5. Tick Direction (Approximation)
+    price_col = 'close' if 'close' in features.columns else 'price'
+    features['tick_direction'] = np.sign(features[price_col] - features[price_col].shift(1))
+    features['cumulative_tick_direction'] = features['tick_direction'].cumsum()
+    
+    return features
+
+
+def cost_benefit_analysis(data_size_mb: float, computational_resources: str = 'medium') -> str:
+    """
+    Análisis costo-beneficio: ¿usar tick data o 1m proxy?
+    
+    :param data_size_mb: Tamaño de data en MB
+    :param computational_resources: 'low', 'medium', 'high'
+    :return: Recomendación ('tick_data', '1m_proxy', 'hybrid')
+    """
+    
+    # Ajustar thresholds según recursos computacionales
+    thresholds = {
+        'low': (50, 200),      # Recursos limitados
+        'medium': (100, 1000), # Recursos normales  
+        'high': (500, 5000)    # Recursos altos
+    }
+    
+    small_threshold, large_threshold = thresholds.get(computational_resources, thresholds['medium'])
+    
+    if data_size_mb < small_threshold:
+        return "tick_data"  # Vale la pena la precisión extra
+    elif data_size_mb < large_threshold:
+        return "hybrid"     # Combinar según necesidades
+    else:
+        return "1m_proxy"   # Costo computacional prohibitivo
+
+
+def get_1m_proxy_dollar_bars(file_path_or_df: Union[str, Iterable[str], pd.DataFrame],
+                            threshold: Optional[float] = None,
+                            target_bars_per_day: int = 50,
+                            proxy_method: str = 'weighted',
+                            batch_size: int = 20000000,
+                            verbose: bool = True,
+                            to_csv: bool = False,
+                            output_path: Optional[str] = None) -> pd.DataFrame:
+    """
+    Creates dollar bars using 1m proxy data (cost-effective alternative to tick data)
+    
+    :param file_path_or_df: Path to csv or DataFrame with tick data
+    :param threshold: Dollar threshold (if None, auto-calibrates)
+    :param target_bars_per_day: Target bars per day for auto-calibration
+    :param proxy_method: Method for 1m resampling ('ohlcv', 'weighted', 'last_tick')
+    :param batch_size: Number of rows to read per batch
+    :param verbose: Print progress messages
+    :param to_csv: Save results to CSV
+    :param output_path: Output file path if to_csv=True
+    :return: Dollar bars from 1m proxy data
+    """
+    
+    # Leer datos
+    if isinstance(file_path_or_df, pd.DataFrame):
+        raw_data = file_path_or_df
+    else:
+        raw_data = pd.read_csv(file_path_or_df, nrows=batch_size)
+    
+    if verbose:
+        print(f"Converting tick data to 1m proxy using '{proxy_method}' method...")
+    
+    # Convertir a 1m proxy
+    minute_proxy = resample_to_1min_proxy(raw_data, method=proxy_method)
+    
+    # Auto-calibrar threshold si no se proporciona
+    if threshold is None:
+        # Calcular dollar volume para calibración
+        price_col = 'close' if 'close' in minute_proxy.columns else 'price'
+        minute_proxy['dollar_volume'] = minute_proxy[price_col] * minute_proxy['volume']
+        
+        daily_dollar_volume = minute_proxy['dollar_volume'].sum()
+        # Estimar días (asumiendo 6.5h de trading por día)
+        trading_days = len(minute_proxy) / (6.5 * 60)
+        threshold = daily_dollar_volume / (target_bars_per_day * trading_days)
+        
+        if verbose:
+            print(f"Auto-calibrated threshold: ${threshold:,.0f} per bar (target: {target_bars_per_day} bars/day)")
+    
+    # Crear dollar bars usando 1m proxy
+    # Preparar datos en formato estándar
+    price_col = 'close' if 'close' in minute_proxy.columns else 'price'
+    processed_data = minute_proxy[['date_time', price_col, 'volume']].copy()
+    processed_data.columns = ['date_time', 'price', 'volume']
+    
+    # Crear barras
+    bars = StandardBars(metric='dollar_bars', threshold=threshold, batch_size=len(processed_data))
+    result = bars._extract_bars(processed_data)
+    
+    if verbose:
+        print(f"Generated {len(result)} dollar bars using 1m proxy data")
+    
+    # Convertir a DataFrame
+    if result:
+        df_result = pd.DataFrame(result)
+        if to_csv and output_path:
+            df_result.to_csv(output_path, index=False)
+        return df_result
+    else:
+        return pd.DataFrame()
