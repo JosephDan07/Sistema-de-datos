@@ -28,7 +28,7 @@ except ImportError:
 if NUMBA_AVAILABLE:
     # Use lazy compilation to avoid startup delays
     @jit(nopython=True, cache=True)
-    def ewma(arr_in, window):  # pragma: no cover
+    def _ewma_numba(arr_in, window):  # pragma: no cover
         """
         Exponentially weighted moving average specified by a decay ``window`` to provide better adjustments for
         small windows via:
@@ -48,6 +48,31 @@ if NUMBA_AVAILABLE:
         
         # Initialize output array
         ewma_out = np.empty(len(arr_in), dtype=np.float64)
+        
+        # Initialize first value
+        ewma_out[0] = arr_in[0]
+        
+        # Calculate EWMA for the rest of the array
+        for i in range(1, len(arr_in)):
+            ewma_out[i] = alpha * arr_in[i] + (1 - alpha) * ewma_out[i - 1]
+        
+        return ewma_out
+    
+    def ewma(arr_in, window):
+        """
+        EWMA wrapper that properly handles pandas Series and other input types
+        """
+        # Convert to numpy array if necessary
+        if hasattr(arr_in, 'values'):  # pandas Series/DataFrame
+            arr_in = arr_in.values
+        
+        # Ensure numpy array with proper dtype
+        arr_in = np.asarray(arr_in, dtype=np.float64)
+        
+        if len(arr_in) == 0:
+            return np.array([], dtype=np.float64)
+        
+        return _ewma_numba(arr_in, window)
         
         # Initialize first value
         ewma_out[0] = arr_in[0]
@@ -102,7 +127,7 @@ else:
 
 if NUMBA_AVAILABLE:
     @jit(nopython=True, cache=True)
-    def ewma_alpha(arr_in, alpha):  # pragma: no cover
+    def _ewma_alpha_numba(arr_in, alpha):  # pragma: no cover
         """
         EWMA with direct alpha specification for better control.
         
@@ -129,6 +154,25 @@ if NUMBA_AVAILABLE:
             ewma_out[i] = alpha * arr_in[i] + alpha_complement * ewma_out[i - 1]
         
         return ewma_out
+    
+    def ewma_alpha(arr_in, alpha):
+        """
+        EWMA alpha wrapper that properly handles pandas Series and other input types
+        """
+        if alpha <= 0.0 or alpha > 1.0:
+            raise ValueError("Alpha must be between 0 and 1")
+        
+        # Convert to numpy array if necessary
+        if hasattr(arr_in, 'values'):  # pandas Series/DataFrame
+            arr_in = arr_in.values
+        
+        # Ensure numpy array with proper dtype
+        arr_in = np.asarray(arr_in, dtype=np.float64)
+        
+        if len(arr_in) == 0:
+            return np.array([], dtype=np.float64)
+        
+        return _ewma_alpha_numba(arr_in, alpha)
 else:
     def ewma_alpha(arr_in, alpha):
         """
