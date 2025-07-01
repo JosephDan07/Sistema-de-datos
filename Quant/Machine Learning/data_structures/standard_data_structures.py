@@ -23,8 +23,29 @@ import pandas as pd
 
 try:
     from .base_bars import BaseBars
+    from ..util.volume_classifier import get_tick_rule_buy_volume
+    from ..util.misc import crop_data_frame_in_batches
 except ImportError:
-    from base_bars import BaseBars
+    try:
+        from base_bars import BaseBars
+    except ImportError:
+        import sys
+        import os
+        # Add current directory to path
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        if current_dir not in sys.path:
+            sys.path.append(current_dir)
+        from base_bars import BaseBars
+    
+    # Fallback implementations
+    def get_tick_rule_buy_volume(close, volume):
+        return volume * 0.5
+    def crop_data_frame_in_batches(df, chunksize):
+        chunks = []
+        for start in range(0, len(df), chunksize):
+            end = min(start + chunksize, len(df))
+            chunks.append(df.iloc[start:end].copy())
+        return chunks
 
 
 class StandardBars(BaseBars):
@@ -51,6 +72,9 @@ class StandardBars(BaseBars):
         
         # Current cumulative value being tracked
         self.cum_value = 0
+        
+        # Tick rule memory
+        self.last_tick_direction = 1
 
     def _reset_cache(self):
         """
@@ -137,17 +161,29 @@ class StandardBars(BaseBars):
         
     def _apply_tick_rule(self, price: float) -> int:
         """
-        Applies the tick rule as defined on page 29.
+        Applies the tick rule as defined on page 29-30 of Advances in Financial Machine Learning.
+        
+        The tick rule classifies trades as buyer-initiated (1) or seller-initiated (-1).
+        When price doesn't change, we use the last known tick direction (memory).
         
         :param price: (float) Current price
-        :return: (int) 1 if uptick, -1 if downtick, 0 if no change
+        :return: (int) 1 if uptick, -1 if downtick, maintains direction if no change
         """
-        if price > self.prev_price:
+        if self.prev_price is None:
+            # Initialize with positive tick for first trade
+            self.last_tick_direction = 1
+            return 1
+        elif price > self.prev_price:
+            # Uptick: buyer-initiated
+            self.last_tick_direction = 1
             return 1
         elif price < self.prev_price:
+            # Downtick: seller-initiated
+            self.last_tick_direction = -1
             return -1
         else:
-            return 0
+            # No price change: use last known direction (López de Prado, page 29)
+            return getattr(self, 'last_tick_direction', 1)
 
 
 def get_tick_bars(file_path_or_df: Union[str, Iterable[str], pd.DataFrame], 

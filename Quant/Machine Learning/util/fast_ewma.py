@@ -27,7 +27,7 @@ except ImportError:
 
 if NUMBA_AVAILABLE:
     # Use lazy compilation to avoid startup delays
-    @jit(nopython=False, nogil=True, cache=True)
+    @jit(nopython=True, cache=True)
     def ewma(arr_in, window):  # pragma: no cover
         """
         Exponentially weighted moving average specified by a decay ``window`` to provide better adjustments for
@@ -40,15 +40,14 @@ if NUMBA_AVAILABLE:
         :return: (np.ndarray) The EWMA vector, same length / shape as ``arr_in``
         """
         
-        # Ensure input is float64
-        arr_in = np.asarray(arr_in, dtype=np.float64)
-        window = int(window)
+        if len(arr_in) == 0:
+            return np.empty(0, dtype=np.float64)
         
         # Calculate the decay factor alpha
         alpha = 2.0 / (window + 1.0)
         
         # Initialize output array
-        ewma_out = np.empty_like(arr_in, dtype=np.float64)
+        ewma_out = np.empty(len(arr_in), dtype=np.float64)
         
         # Initialize first value
         ewma_out[0] = arr_in[0]
@@ -102,7 +101,7 @@ else:
 
 
 if NUMBA_AVAILABLE:
-    @jit(nopython=False, nogil=True, cache=True)
+    @jit(nopython=True, cache=True)
     def ewma_alpha(arr_in, alpha):  # pragma: no cover
         """
         EWMA with direct alpha specification for better control.
@@ -112,18 +111,14 @@ if NUMBA_AVAILABLE:
         :return: (np.ndarray) The EWMA vector, same length / shape as ``arr_in``
         """
         
-        # Ensure input is float64
-        arr_in = np.asarray(arr_in, dtype=np.float64)
-        alpha = float(alpha)
-        
         if len(arr_in) == 0:
-            return np.array([], dtype=np.float64)
+            return np.empty(0, dtype=np.float64)
         
         if alpha <= 0.0 or alpha > 1.0:
             raise ValueError("Alpha must be between 0 and 1")
         
         # Initialize output array
-        ewma_out = np.empty_like(arr_in, dtype=np.float64)
+        ewma_out = np.empty(len(arr_in), dtype=np.float64)
         
         # Initialize first value
         ewma_out[0] = arr_in[0]

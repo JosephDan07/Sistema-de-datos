@@ -41,13 +41,24 @@ def ewma(values: np.ndarray, alpha: float) -> np.ndarray:
     if alpha <= 0 or alpha > 1:
         raise ValueError("Alpha must be between 0 and 1")
     
-    result = np.empty_like(values, dtype=np.float64)
-    result[0] = values[0]
-    
-    for i in range(1, len(values)):
-        result[i] = alpha * values[i] + (1 - alpha) * result[i-1]
-    
-    return result
+    # Try to use fast EWMA from util if available
+    try:
+        import sys
+        import os
+        util_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'util')
+        if util_path not in sys.path:
+            sys.path.append(util_path)
+        from fast_ewma import ewma as fast_ewma
+        return fast_ewma(values, window=int(2/alpha - 1))
+    except ImportError:
+        # Fall back to simple implementation
+        result = np.empty_like(values, dtype=np.float64)
+        result[0] = values[0]
+        
+        for i in range(1, len(values)):
+            result[i] = alpha * values[i] + (1 - alpha) * result[i-1]
+        
+        return result
 
 
 class BaseBars(ABC):
@@ -57,7 +68,7 @@ class BaseBars(ABC):
     they are included here so as to avoid a complicated nested class structure.
     """
 
-    def __init__(self, metric: str, batch_size: int = 20000000):
+    def __init__(self, metric: str, batch_size: int = 20000000, **kwargs):
         """
         Constructor
 
@@ -75,6 +86,9 @@ class BaseBars(ABC):
         self.low_price = None
         self.close_price = None
         
+        # Tick rule memory (López de Prado, page 29)
+        self.last_tick_direction = 1
+        
         # Caches for bar construction
         self.cum_statistics = {'cum_ticks': 0, 'cum_dollar_value': 0, 'cum_volume': 0, 'cum_buy_volume': 0}
         
@@ -87,6 +101,10 @@ class BaseBars(ABC):
         self.runs_array = []
         self.expected_runs_window = []
         self.run_tick_statistics = {'num_ticks_bar': []}
+        
+        # Warm-up period management (López de Prado recommendation)
+        self.warm_up_period = 100  # Number of bars for warm-up
+        self.is_warm_up_complete = False
 
     def _reset_cache(self):
         """
@@ -102,7 +120,7 @@ class BaseBars(ABC):
         self.cum_statistics = {'cum_ticks': 0, 'cum_dollar_value': 0, 'cum_volume': 0, 'cum_buy_volume': 0}
 
     def batch_run(self, file_path_or_df: Union[str, Iterable[str], pd.DataFrame], verbose: bool = True, 
-                  to_csv: bool = False, output_path: Optional[str] = None) -> Union[pd.DataFrame, None]:
+                  to_csv: bool = False, output_path: Optional[str] = None, **kwargs) -> Union[pd.DataFrame, None]:
         """
         Reads csv file(s) or pd.DataFrame in batches and then constructs the financial data structure in the form of a DataFrame.
         The csv file or DataFrame must have only 3 columns: date_time, price, & volume.
@@ -122,13 +140,25 @@ class BaseBars(ABC):
         list_bars = []
         
         # Process data in batches
+        total_bars_generated = 0
         for batch in self._batch_iterator(file_path_or_df):
             if verbose:
                 print(f'Processing batch with {len(batch)} rows...')
+            
+            # Validate and clean data quality (re-enabled)
+            batch = self._validate_data_quality(batch)
+            if len(batch) == 0:
+                if verbose:
+                    print("Batch empty after data cleaning, skipping...")
+                continue
                 
             # Extract bars from current batch
             list_bars_batch = self._extract_bars(batch)
             list_bars.extend(list_bars_batch)
+            
+            # Check warm-up completion (re-enabled)
+            total_bars_generated += len(list_bars_batch)
+            self._check_warm_up_completion(total_bars_generated)
             
             if verbose and list_bars_batch:
                 print(f'Generated {len(list_bars_batch)} bars from batch')
@@ -229,20 +259,32 @@ class BaseBars(ABC):
     def _create_bar(self, date_time, price: float, high_price: float, low_price: float, 
                    open_price: float) -> dict:
         """
-        Create a bar dictionary with OHLC data and statistics
+        Create a bar dictionary with OHLC data and microstructural statistics
+        Following López de Prado's recommendations for comprehensive bar information
         
         :param date_time: Bar timestamp
         :param price: (float) Close price
         :param high_price: (float) High price
         :param low_price: (float) Low price  
         :param open_price: (float) Open price
-        :return: (dict) Bar data
+        :return: (dict) Bar data with microstructural features
         """
         
         # Calculate VWAP if we have volume data
         vwap = (self.cum_statistics['cum_dollar_value'] / 
                 self.cum_statistics['cum_volume']) if self.cum_statistics['cum_volume'] > 0 else price
-                
+        
+        # Calculate buy volume percentage (López de Prado, page 30)
+        buy_volume_pct = (self.cum_statistics['cum_buy_volume'] / 
+                         self.cum_statistics['cum_volume']) if self.cum_statistics['cum_volume'] > 0 else 0.5
+        
+        # Calculate realized volatility (high-low estimator)
+        realized_vol = np.log(high_price / low_price) if low_price > 0 and high_price > 0 else 0
+        
+        # Price change information
+        price_change = price - open_price
+        price_change_pct = (price_change / open_price) if open_price > 0 else 0
+        
         return {
             'date_time': date_time,
             'open': open_price,
@@ -251,8 +293,13 @@ class BaseBars(ABC):
             'close': price,
             'volume': self.cum_statistics['cum_volume'],
             'cum_buy_volume': self.cum_statistics['cum_buy_volume'],
+            'buy_volume_pct': buy_volume_pct,
             'vwap': vwap,
-            'num_ticks': self.cum_statistics['cum_ticks']
+            'num_ticks': self.cum_statistics['cum_ticks'],
+            'dollar_volume': self.cum_statistics['cum_dollar_value'],
+            'realized_volatility': realized_vol,
+            'price_change': price_change,
+            'price_change_pct': price_change_pct
         }
 
     @abstractmethod
@@ -261,6 +308,7 @@ class BaseBars(ABC):
         This method is required by all the bar types. It describes how cache should be reset
         when new bar is sampled.
         """
+        pass
 
     @staticmethod
     def _assert_csv(test_batch: pd.DataFrame):
@@ -282,19 +330,29 @@ class BaseBars(ABC):
 
     def _apply_tick_rule(self, price: float) -> int:
         """
-        Applies the tick rule as defined on page 29 of Advances in Financial Machine Learning.
+        Applies the tick rule as defined on page 29-30 of Advances in Financial Machine Learning.
+        
+        The tick rule classifies trades as buyer-initiated (1) or seller-initiated (-1).
+        When price doesn't change, we use the last known tick direction (memory).
 
         :param price: (float) Price at time t
-        :return: (int) The signed tick
+        :return: (int) The signed tick: 1 (buyer-initiated), -1 (seller-initiated)
         """
         if self.prev_price is None:
+            # Initialize with positive tick for first trade
+            self.last_tick_direction = 1
             return 1
         elif price > self.prev_price:
+            # Uptick: buyer-initiated
+            self.last_tick_direction = 1
             return 1
         elif price < self.prev_price:
+            # Downtick: seller-initiated
+            self.last_tick_direction = -1
             return -1
         else:
-            return 0
+            # No price change: use last known direction (López de Prado, page 29)
+            return getattr(self, 'last_tick_direction', 1)
 
     def _get_imbalance(self, price: float, signed_tick: int, volume: float) -> float:
         """
@@ -308,6 +366,50 @@ class BaseBars(ABC):
         :return: (float) Imbalance at time t
         """
         return signed_tick * volume
+
+    def _validate_data_quality(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Validate and clean data quality following López de Prado's recommendations
+        
+        :param data: (pd.DataFrame) Raw tick data
+        :return: (pd.DataFrame) Cleaned data
+        """
+        initial_count = len(data)
+        
+        # Remove rows with missing critical data
+        data = data.dropna(subset=['price', 'volume'])
+        
+        # Remove zero or negative prices
+        data = data[data['price'] > 0]
+        
+        # Remove zero volume trades (optional, depends on data source)
+        # data = data[data['volume'] > 0]  # Uncomment if needed
+        
+        # Remove extreme outliers (> 10 standard deviations)
+        price_mean = data['price'].mean()
+        price_std = data['price'].std()
+        if price_std > 0:
+            price_outlier_mask = (np.abs(data['price'] - price_mean) < 10 * price_std)
+            data = data[price_outlier_mask]
+        
+        cleaned_count = len(data)
+        if initial_count > cleaned_count:
+            warnings.warn(f"Data cleaning removed {initial_count - cleaned_count} rows "
+                         f"({(initial_count - cleaned_count)/initial_count*100:.2f}%)")
+        
+        return data.reset_index(drop=True)
+    
+    def _check_warm_up_completion(self, num_bars_generated: int):
+        """
+        Check if warm-up period is complete
+        
+        :param num_bars_generated: (int) Number of bars generated so far
+        """
+        if not self.is_warm_up_complete and num_bars_generated >= self.warm_up_period:
+            self.is_warm_up_complete = True
+            if hasattr(self, 'verbose') and self.verbose:
+                warnings.warn(f"Warm-up period complete after {self.warm_up_period} bars. "
+                             "Statistical properties should now be stable.")
 
 
 class BaseImbalanceBars(BaseBars):
@@ -365,6 +467,7 @@ class BaseImbalanceBars(BaseBars):
         """
         Abstract method which updates expected number of ticks when new run bar is formed
         """
+        pass
 
 
 class BaseRunBars(BaseBars):
@@ -427,3 +530,4 @@ class BaseRunBars(BaseBars):
         """
         Abstract method which updates expected number of ticks when new imbalance bar is formed
         """
+        pass

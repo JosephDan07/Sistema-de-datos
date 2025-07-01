@@ -90,7 +90,7 @@ def get_quote_rule_buy_volume(close: pd.Series, bid: pd.Series, ask: pd.Series, 
     # For trades at midpoint, use tick rule
     price_changes = close.diff()
     tick_direction = np.sign(price_changes)
-    tick_direction = tick_direction.replace(0, np.nan).fillna(method='ffill').fillna(1)
+    tick_direction = tick_direction.replace(0, np.nan).ffill().fillna(1)
     
     # Fill midpoint trades with tick rule
     buy_indicator = pd.Series(buy_indicator, index=close.index)
