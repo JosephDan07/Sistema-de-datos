@@ -32,7 +32,7 @@ def _crop_data_frame_in_batches(df: pd.DataFrame, chunksize: int) -> list:
 
 def ewma(values: np.ndarray, alpha: float) -> np.ndarray:
     """
-    Exponentially weighted moving average
+    Exponentially weighted moving average following López de Prado specifications
     
     :param values: (np.ndarray) Values to calculate EWMA for
     :param alpha: (float) Smoothing factor between 0 and 1
@@ -41,24 +41,18 @@ def ewma(values: np.ndarray, alpha: float) -> np.ndarray:
     if alpha <= 0 or alpha > 1:
         raise ValueError("Alpha must be between 0 and 1")
     
-    # Try to use fast EWMA from util if available
-    try:
-        import sys
-        import os
-        util_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'util')
-        if util_path not in sys.path:
-            sys.path.append(util_path)
-        from fast_ewma import ewma as fast_ewma
-        return fast_ewma(values, window=int(2/alpha - 1))
-    except ImportError:
-        # Fall back to simple implementation
-        result = np.empty_like(values, dtype=np.float64)
-        result[0] = values[0]
-        
-        for i in range(1, len(values)):
-            result[i] = alpha * values[i] + (1 - alpha) * result[i-1]
-        
-        return result
+    # Handle empty arrays
+    if len(values) == 0:
+        return np.array([], dtype=np.float64)
+    
+    # Direct implementation following López de Prado formula
+    result = np.empty_like(values, dtype=np.float64)
+    result[0] = values[0]
+    
+    for i in range(1, len(values)):
+        result[i] = alpha * values[i] + (1 - alpha) * result[i-1]
+    
+    return result
 
 
 class BaseBars(ABC):

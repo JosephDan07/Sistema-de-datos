@@ -7,18 +7,24 @@ import pandas as pd
 import numpy as np
 
 
-def get_bvc_buy_volume(close: pd.Series, volume: pd.Series, window: int = 20) -> pd.Series:
+def get_bvc_buy_volume(close, volume, window: int = 20):
     """
     Calculates the BVC (Bulk Volume Classification) buy volume
     
     BVC is a method for estimating the proportion of volume that is buyer-initiated
     based on the distribution of price changes.
 
-    :param close: (pd.Series): Close prices
-    :param volume: (pd.Series): Bar volumes
+    :param close: (pd.Series or np.array): Close prices
+    :param volume: (pd.Series or np.array): Bar volumes
     :param window: (int): Window for std estimation uses in BVC calculation
-    :return: (pd.Series) BVC buy volume
+    :return: (pd.Series or np.array) BVC buy volume
     """
+    
+    # Convert to pandas Series if numpy array
+    if isinstance(close, np.ndarray):
+        close = pd.Series(close)
+    if isinstance(volume, np.ndarray):
+        volume = pd.Series(volume)
     
     # Calculate price changes
     price_changes = close.diff()
@@ -39,14 +45,20 @@ def get_bvc_buy_volume(close: pd.Series, volume: pd.Series, window: int = 20) ->
     return buy_volume
 
 
-def get_tick_rule_buy_volume(close: pd.Series, volume: pd.Series) -> pd.Series:
+def get_tick_rule_buy_volume(close, volume):
     """
     Calculates buy volume using the tick rule (Lee-Ready algorithm)
     
-    :param close: (pd.Series): Close prices
-    :param volume: (pd.Series): Bar volumes
-    :return: (pd.Series) Tick rule buy volume
+    :param close: (pd.Series or np.array): Close prices
+    :param volume: (pd.Series or np.array): Bar volumes
+    :return: (pd.Series or np.array) Tick rule buy volume
     """
+    
+    # Convert to pandas Series if numpy array
+    if isinstance(close, np.ndarray):
+        close = pd.Series(close)
+    if isinstance(volume, np.ndarray):
+        volume = pd.Series(volume)
     
     # Calculate price changes
     price_changes = close.diff()

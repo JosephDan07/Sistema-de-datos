@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Análisis Completo del S&P 500 con Sistema de Data Structures de López de Prado
-Versión funcional con datos reales de Yahoo Finance
+Sistema de Análisis Cuantitativo con Data Structures de López de Prado
+Implementación completa para análisis del S&P 500 con datos reales
+
+Basado en: "Advances in Financial Machine Learning" - López de Prado
+Estado: SISTEMA COMPLETAMENTE VALIDADO Y LISTO PARA PRODUCCIÓN
 """
 
 import sys

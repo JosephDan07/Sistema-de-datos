@@ -61,7 +61,7 @@ class RunBars(BaseBars):
         self.num_prev_bars = num_prev_bars
         self.expected_runs_window = expected_runs_window
         self.exp_num_ticks_init = exp_num_ticks_init
-        self.exp_num_ticks_constraints = exp_num_ticks_constraints or [10, np.inf]
+        self.exp_num_ticks_constraints = exp_num_ticks_constraints or [10, 1000000]
         self.alpha = alpha  # EWMA smoothing factor
         
         # Run tracking (López de Prado, page 31)

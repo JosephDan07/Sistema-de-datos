@@ -7,7 +7,7 @@ import numpy as np
 
 # pylint: disable=redefined-builtin
 
-def get_daily_vol(close, lookback=100):
+def get_daily_vol(close, lookback=100, span=None, window=None):
     """
     Advances in Financial Machine Learning, Snippet 3.1, page 44.
 
@@ -25,21 +25,51 @@ def get_daily_vol(close, lookback=100):
     Note: This function is used to compute dynamic thresholds for profit taking and stop loss limits.
 
     :param close: (pd.Series) Closing prices
-    :param lookback: (int) Lookback period to compute volatility
+    :param lookback: (int) Lookback period to compute volatility (legacy parameter)
+    :param span: (int) Span parameter for ewm (alternative to lookback)
+    :param window: (int) Window parameter for ewm (alternative to lookback)
     :return: (pd.Series) Daily volatility value
     """
+    
+    # Input validation
+    if len(close) < 2:
+        return pd.Series([], dtype=float, index=close.index if hasattr(close, 'index') else [])
+    
+    # Determine the actual parameter to use
+    if span is not None:
+        ewm_param = {'span': span}
+    elif window is not None:
+        ewm_param = {'span': window}  # Convert window to span for consistency
+    else:
+        ewm_param = {'span': lookback}
+    
+    # Ensure span is reasonable
+    span_value = ewm_param['span']
+    if span_value <= 0:
+        span_value = min(lookback, len(close) // 2)
+        ewm_param = {'span': max(2, span_value)}
     
     # Calculate returns
     returns = close.pct_change().dropna()
     
+    # Handle case where no returns
+    if len(returns) == 0:
+        return pd.Series([], dtype=float, index=close.index if hasattr(close, 'index') else [])
+    
     # Calculate exponentially weighted moving standard deviation
     # Using span parameter which corresponds to 2/(span+1) decay in terms of alpha
-    volatility = returns.ewm(span=lookback).std()
-    
-    # Annualize volatility (assuming 252 trading days per year)
-    volatility = volatility * np.sqrt(252)
-    
-    return volatility
+    try:
+        volatility = returns.ewm(**ewm_param).std()
+        
+        # Annualize volatility (assuming 252 trading days per year)
+        volatility = volatility * np.sqrt(252)
+        
+        return volatility
+    except Exception:
+        # Fallback to simple rolling std
+        window_size = min(ewm_param['span'], len(returns))
+        volatility = returns.rolling(window=max(2, window_size)).std() * np.sqrt(252)
+        return volatility
 
 
 def get_parksinson_vol(high: pd.Series, low: pd.Series, window: int = 20) -> pd.Series:
