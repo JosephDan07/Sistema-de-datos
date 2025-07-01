@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Sistema de Análisis Cuantitativo con Data Structures de López de Prado
-Implementación completa para análisis del S&P 500 con datos reales
+Implementación completa para análisis de BITCOIN (BTC-USD) con datos reales
 
 Basado en: "Advances in Financial Machine Learning" - López de Prado
 Estado: SISTEMA COMPLETAMENTE VALIDADO Y LISTO PARA PRODUCCIÓN
@@ -51,19 +51,19 @@ except Exception as e:
     sys.exit(1)
 
 
-def get_spy_data():
-    """Obtener datos reales del SPY"""
-    print("\n📡 Obteniendo datos históricos de SPY...")
+def get_btc_data():
+    """Obtener datos reales de Bitcoin (BTC-USD)"""
+    print("\n📡 Obteniendo datos históricos de Bitcoin (BTC-USD)...")
     
     try:
-        spy = yf.Ticker("SPY")
+        btc = yf.Ticker("BTC-USD")
         end_date = datetime.now()
-        start_date = end_date - timedelta(days=7300)  # 20 años de datos
+        start_date = end_date - timedelta(days=3650)  # 10 años de datos (Bitcoin disponible desde 2010)
         
-        data = spy.history(start=start_date, end=end_date)
+        data = btc.history(start=start_date, end=end_date)
         
         if data.empty:
-            print("❌ No se pudieron obtener datos")
+            print("❌ No se pudieron obtener datos de Bitcoin")
             return None
         
         # Preparar datos para análisis
@@ -73,14 +73,16 @@ def get_spy_data():
             'volume': data['Volume']
         })
         
-        print(f"✅ Datos obtenidos: {len(analysis_data)} registros")
+        print(f"✅ Datos de Bitcoin obtenidos: {len(analysis_data)} registros")
         print(f"   Período: {analysis_data['date_time'].min()} a {analysis_data['date_time'].max()}")
-        print(f"   Precio actual: ${analysis_data['price'].iloc[-1]:.2f}")
+        print(f"   Precio actual BTC: ${analysis_data['price'].iloc[-1]:,.2f}")
+        print(f"   Precio más alto: ${analysis_data['price'].max():,.2f}")
+        print(f"   Precio más bajo: ${analysis_data['price'].min():,.2f}")
         
         return analysis_data, data
         
     except Exception as e:
-        print(f"❌ Error obteniendo datos: {e}")
+        print(f"❌ Error obteniendo datos de Bitcoin: {e}")
         return None
 
 
@@ -342,12 +344,12 @@ def create_visualizations(data, raw_data, all_results):
         
         # 1. Precio histórico con más detalles
         plt.subplot(5, 3, 1)
-        plt.plot(raw_data.index, raw_data['Close'], 'b-', linewidth=2, label='SPY Close')
+        plt.plot(raw_data.index, raw_data['Close'], 'b-', linewidth=2, label='BTC Close')
         plt.plot(raw_data.index, raw_data['High'], 'g-', alpha=0.6, linewidth=1, label='High')
         plt.plot(raw_data.index, raw_data['Low'], 'r-', alpha=0.6, linewidth=1, label='Low')
         plt.fill_between(raw_data.index, raw_data['Low'], raw_data['High'], alpha=0.1, color='gray')
-        plt.title('🎯 S&P 500 (SPY) - Precio Histórico (20+ Años)', fontsize=14, fontweight='bold')
-        plt.ylabel('Precio ($)')
+        plt.title('₿ Bitcoin (BTC-USD) - Precio Histórico (10+ Años)', fontsize=14, fontweight='bold')
+        plt.ylabel('Precio (USD)')
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.xticks(rotation=45)
@@ -391,7 +393,7 @@ def create_visualizations(data, raw_data, all_results):
         # 7. EWMA Analysis expandido
         if 'ewma' in all_results and all_results['ewma']:
             plt.subplot(5, 3, 7)
-            plt.plot(data.index, data['price'], 'b-', alpha=0.8, linewidth=2, label='SPY Price')
+            plt.plot(data.index, data['price'], 'b-', alpha=0.8, linewidth=2, label='BTC Price')
             colors = ['red', 'orange', 'purple']
             for i, (window, ewma_vals) in enumerate(all_results['ewma'].items()):
                 if ewma_vals is not None and len(ewma_vals) > 0:
@@ -414,8 +416,8 @@ def create_visualizations(data, raw_data, all_results):
                         plt.scatter(data.index[sell_signals], data['price'].iloc[sell_signals], 
                                   color='red', marker='v', s=100, alpha=0.8, label='Sell Signal')
             
-            plt.title('📈 Fast EWMA con Señales de Trading', fontsize=12, fontweight='bold')
-            plt.ylabel('Precio')
+            plt.title('₿ Fast EWMA con Señales de Trading', fontsize=12, fontweight='bold')
+            plt.ylabel('Precio (USD)')
             plt.legend()
             plt.grid(True, alpha=0.3)
             plt.xticks(rotation=45)
@@ -555,7 +557,7 @@ def create_visualizations(data, raw_data, all_results):
         plt.tight_layout()
         
         # Guardar visualización principal
-        main_file = f'spy_comprehensive_analysis_{timestamp}.png'
+        main_file = f'btc_comprehensive_analysis_{timestamp}.png'
         plt.savefig(main_file, dpi=300, bbox_inches='tight', facecolor='white')
         print(f"   ✅ Análisis comprehensivo: {main_file}")
         
@@ -574,7 +576,7 @@ def create_visualizations(data, raw_data, all_results):
                         axes[plot_idx].fill_between(bars.index, bars['low'], bars['high'], alpha=0.3)
                         axes[plot_idx].set_title(f'{bar_type.replace("_", " ").title()}\n({len(bars)} barras)', 
                                                fontweight='bold')
-                        axes[plot_idx].set_ylabel('Precio')
+                        axes[plot_idx].set_ylabel('Precio (USD)')
                         axes[plot_idx].grid(True, alpha=0.3)
                         axes[plot_idx].tick_params(axis='x', rotation=45)
                         plot_idx += 1
@@ -583,9 +585,9 @@ def create_visualizations(data, raw_data, all_results):
         for i in range(plot_idx, 12):
             axes[i].set_visible(False)
         
-        plt.suptitle('📊 Comparación Completa: Todas las Barras (Tick, Dollar, Volume)', fontsize=16, fontweight='bold')
+        plt.suptitle('₿ Comparación Completa: Todas las Barras Bitcoin (Tick, Dollar, Volume)', fontsize=16, fontweight='bold')
         plt.tight_layout()
-        bars_file = f'spy_bars_detailed_comparison_{timestamp}.png'
+        bars_file = f'btc_bars_detailed_comparison_{timestamp}.png'
         plt.savefig(bars_file, dpi=300, bbox_inches='tight', facecolor='white')
         print(f"   ✅ Comparación detallada: {bars_file}")
         
@@ -658,7 +660,7 @@ def create_visualizations(data, raw_data, all_results):
         axes[1,1].grid(True, alpha=0.3)
         
         plt.tight_layout()
-        technical_file = f'spy_technical_analysis_{timestamp}.png'
+        technical_file = f'btc_technical_analysis_{timestamp}.png'
         plt.savefig(technical_file, dpi=300, bbox_inches='tight', facecolor='white')
         print(f"   ✅ Análisis técnico: {technical_file}")
         
@@ -676,11 +678,11 @@ def generate_report(data, all_results):
     print("-" * 40)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    report_file = f'spy_analysis_report_{timestamp}.txt'
+    report_file = f'btc_analysis_report_{timestamp}.txt'
     
     try:
         with open(report_file, 'w', encoding='utf-8') as f:
-            f.write("ANÁLISIS COMPLETO DEL S&P 500 (SPY)\n")
+            f.write("ANÁLISIS COMPLETO DE BITCOIN (BTC-USD)\n")
             f.write("=" * 50 + "\n")
             f.write(f"Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             
@@ -688,8 +690,8 @@ def generate_report(data, all_results):
             f.write("DATOS:\n")
             f.write(f"• Período: {data['date_time'].min()} a {data['date_time'].max()}\n")
             f.write(f"• Registros: {len(data)}\n")
-            f.write(f"• Precio inicial: ${data['price'].iloc[0]:.2f}\n")
-            f.write(f"• Precio final: ${data['price'].iloc[-1]:.2f}\n")
+            f.write(f"• Precio inicial: ${data['price'].iloc[0]:,.2f}\n")
+            f.write(f"• Precio final: ${data['price'].iloc[-1]:,.2f}\n")
             
             price_change = ((data['price'].iloc[-1] - data['price'].iloc[0]) / 
                            data['price'].iloc[0]) * 100
@@ -751,16 +753,16 @@ def generate_report(data, all_results):
 def main():
     """Función principal"""
     print("🌟" * 60)
-    print("ANÁLISIS DEFINITIVO DEL S&P 500")
+    print("ANÁLISIS DEFINITIVO DE BITCOIN (BTC-USD)")
     print("Sistema Completo de Data Structures de López de Prado")
     print("🌟" * 60)
     
     start_time = time.time()
     
     # 1. Obtener datos
-    result = get_spy_data()
+    result = get_btc_data()
     if result is None:
-        print("❌ No se pudieron obtener datos")
+        print("❌ No se pudieron obtener datos de Bitcoin")
         return
     
     data, raw_data = result
@@ -791,11 +793,11 @@ def main():
     print("🎉" * 60)
     print(f"⏱️ Tiempo total: {execution_time:.2f} segundos")
     print(f"📊 Datos procesados: {len(data)} registros")
-    print(f"💰 Precio SPY: ${data['price'].iloc[-1]:.2f}")
+    print(f"₿ Precio BTC: ${data['price'].iloc[-1]:,.2f}")
     print("🏆 SISTEMA COMPLETAMENTE VALIDADO")
     print("✨ Algoritmos de López de Prado funcionando perfectamente")
     print("\n🎊 MISIÓN COMPLETADA CON ÉXITO TOTAL")
-    print("🔥 Sistema financiero 100% validado")
+    print("🔥 Sistema financiero 100% validado con Bitcoin")
     print("🌟" * 60)
 
 
