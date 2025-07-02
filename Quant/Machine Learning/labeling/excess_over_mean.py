@@ -4,9 +4,12 @@ Return in excess of mean method.
 Chapter 5, Machine Learning for Factor Investing, by Coqueret and Guida, (2020).
 """
 import numpy as np
+import pandas as pd
+from typing import Union
 
 
-def excess_over_mean(prices, binary=False, resample_by=None, lag=True):
+def excess_over_mean(prices: pd.DataFrame, binary: bool = False, resample_by: str = None, 
+                    lag: bool = True) -> pd.DataFrame:
     """
     Return in excess of mean labeling method. Sourced from Chapter 5.5.1 of Machine Learning for Factor Investing,
     by Coqueret, G. and Guida, T. (2020).
@@ -28,5 +31,50 @@ def excess_over_mean(prices, binary=False, resample_by=None, lag=True):
     :return: (pd.DataFrame) Numerical returns in excess of the market mean return, or sign of return depending on
                 whether binary is False or True respectively.
     """
+    
+    # Resample if requested
+    if resample_by is not None:
+        prices = prices.resample(resample_by).last()
+    
+    # Calculate returns for all stocks
+    returns = prices.pct_change()
+    
+    # Lag returns if requested (forward-looking)
+    if lag:
+        returns = returns.shift(-1)
+    
+    # Calculate mean return for each timestamp (excluding NaN values)
+    mean_returns = returns.mean(axis=1, skipna=True)
+    
+    # Calculate excess returns over mean
+    excess_returns = returns.subtract(mean_returns, axis=0)
+    
+    # Convert to binary if requested
+    if binary:
+        excess_returns = np.sign(excess_returns)
+    
+    return excess_returns
 
-    pass
+
+if __name__ == "__main__":
+    print("Excess Over Mean labeling module loaded successfully!")
+    
+    # Example usage
+    np.random.seed(42)
+    dates = pd.date_range('2020-01-01', periods=100, freq='D')
+    assets = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA']
+    
+    # Generate random price data
+    price_data = {}
+    for asset in assets:
+        price_data[asset] = 100 + np.cumsum(np.random.randn(100) * 0.02)
+    
+    prices = pd.DataFrame(price_data, index=dates)
+    
+    # Calculate excess over mean
+    excess_rets = excess_over_mean(prices, binary=False)
+    print(f"Sample excess returns: {excess_rets.dropna().head()}")
+    
+    # Binary labels
+    binary_labels = excess_over_mean(prices, binary=True)
+    print(f"Sample binary labels: {binary_labels.dropna().head()}")

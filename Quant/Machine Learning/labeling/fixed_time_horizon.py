@@ -7,9 +7,13 @@ labeling data this way can be used in training deep neural networks to predict p
 
 import warnings
 import pandas as pd
+import numpy as np
+from typing import Union
 
 
-def fixed_time_horizon(prices, threshold=0, resample_by=None, lag=True, standardized=False, window=None):
+def fixed_time_horizon(prices: Union[pd.Series, pd.DataFrame], threshold: Union[float, pd.Series] = 0, 
+                      resample_by: str = None, lag: bool = True, standardized: bool = False, 
+                      window: int = None) -> Union[pd.Series, pd.DataFrame]:
     """
     Fixed-Time Horizon Labeling Method.
 
@@ -37,5 +41,78 @@ def fixed_time_horizon(prices, threshold=0, resample_by=None, lag=True, standard
                     less/between/greater than the threshold at each corresponding time index. First or last row will be
                     NaN, depending on lag.
     """
+    
+    # Resample if requested
+    if resample_by is not None:
+        prices = prices.resample(resample_by).last()
+        if isinstance(threshold, pd.Series):
+            threshold = threshold.resample(resample_by).last()
+    
+    # Calculate returns
+    returns = prices.pct_change()
+    
+    # Lag returns if requested (forward-looking)
+    if lag:
+        returns = returns.shift(-1)
+    
+    # Standardize returns if requested
+    if standardized:
+        if window is None:
+            warnings.warn("Window parameter must be specified when standardized=True. Using full sample.")
+            returns = (returns - returns.mean()) / returns.std()
+        else:
+            rolling_mean = returns.rolling(window=window).mean()
+            rolling_std = returns.rolling(window=window).std()
+            returns = (returns - rolling_mean) / rolling_std
+    
+    # Apply threshold logic
+    if isinstance(threshold, (int, float)):
+        # Static threshold
+        if threshold == 0:
+            # Simple sign of returns
+            labels = np.sign(returns)
+        else:
+            # Threshold-based labeling
+            labels = pd.Series(index=returns.index, dtype=float)
+            labels[returns > threshold] = 1
+            labels[returns < -threshold] = -1
+            labels[(returns >= -threshold) & (returns <= threshold)] = 0
+    else:
+        # Dynamic threshold (pd.Series)
+        if not isinstance(threshold, pd.Series):
+            raise ValueError("Threshold must be a float or pd.Series")
+        
+        # Align threshold with returns
+        threshold = threshold.reindex(returns.index, method='ffill')
+        
+        labels = pd.Series(index=returns.index, dtype=float)
+        labels[returns > threshold] = 1
+        labels[returns < -threshold] = -1
+        labels[(returns >= -threshold) & (returns <= threshold)] = 0
+    
+    return labels
 
-    pass
+
+def get_daily_vol_simple(close: pd.Series, lookback: int = 100) -> pd.Series:
+    """
+    Simple daily volatility estimation for use with fixed time horizon labeling.
+    
+    :param close: (pd.Series) Close prices
+    :param lookback: (int) Number of days to use for volatility calculation
+    :return: (pd.Series) Daily volatility estimates
+    """
+    returns = close.pct_change().dropna()
+    return returns.rolling(window=lookback).std()
+
+
+if __name__ == "__main__":
+    # Example usage
+    print("Fixed Time Horizon Labeling module loaded successfully!")
+    
+    # Create sample data
+    dates = pd.date_range('2020-01-01', periods=100, freq='D')
+    prices = pd.Series(100 + np.cumsum(np.random.randn(100) * 0.02), index=dates)
+    
+    # Basic labeling
+    labels = fixed_time_horizon(prices, threshold=0.01)
+    print(f"Sample labels: {labels.dropna().head()}")

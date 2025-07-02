@@ -5,9 +5,12 @@ Most basic form of labeling based on raw return of each observation relative to 
 """
 
 import numpy as np
+import pandas as pd
+from typing import Union
 
 
-def raw_return(prices, binary=False, logarithmic=False, resample_by=None, lag=True):
+def raw_return(prices: Union[pd.Series, pd.DataFrame], binary: bool = False, logarithmic: bool = False, 
+               resample_by: str = None, lag: bool = True) -> Union[pd.Series, pd.DataFrame]:
     """
     Raw returns labeling method.
 
@@ -26,5 +29,39 @@ def raw_return(prices, binary=False, logarithmic=False, resample_by=None, lag=Tr
     :return:  (pd.Series or pd.DataFrame) Raw returns on market data. User can specify whether returns will be based on
                 simple or logarithmic return, and whether the output will be numerical or categorical.
     """
+    
+    # Resample if requested
+    if resample_by is not None:
+        prices = prices.resample(resample_by).last()
+    
+    # Calculate returns
+    if logarithmic:
+        returns = np.log(prices).diff()
+    else:
+        returns = prices.pct_change()
+    
+    # Lag returns if requested (forward-looking)
+    if lag:
+        returns = returns.shift(-1)
+    
+    # Convert to binary if requested
+    if binary:
+        returns = np.sign(returns)
+    
+    return returns
 
-    pass
+
+if __name__ == "__main__":
+    print("Raw Return labeling module loaded successfully!")
+    
+    # Example usage
+    dates = pd.date_range('2020-01-01', periods=100, freq='D')
+    prices = pd.Series(100 + np.cumsum(np.random.randn(100) * 0.02), index=dates)
+    
+    # Raw returns
+    raw_rets = raw_return(prices, binary=False, logarithmic=False)
+    print(f"Sample raw returns: {raw_rets.dropna().head()}")
+    
+    # Binary labels
+    binary_labels = raw_return(prices, binary=True, logarithmic=False)
+    print(f"Sample binary labels: {binary_labels.dropna().head()}")
