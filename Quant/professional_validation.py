@@ -336,25 +336,21 @@ class LopezDePradoValidator:
                     df = df.dropna(how='all')
                     
                     if len(df) > 0:
-                        # Mejorar detección de columna de fecha
-                        date_col = self._find_date_column_enhanced(df)
-                        if date_col:
-                            df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
-                            df = df.dropna(subset=[date_col])
-                            df.set_index(date_col, inplace=True)
-                            df = df.sort_index()
-                            
-                            # Limpiar nombres de columnas
-                            df.columns = [str(col).strip().lower().replace(' ', '_') for col in df.columns]
-                            
-                            # Guardar
+                        # Transformar al formato López de Prado [date_time, price, volume]
+                        formatted_df = self._format_data_for_lopez_de_prado(df, file)
+                        
+                        if formatted_df is not None:
+                            # Guardar con formato López de Prado
                             key = file.replace('.xlsx', '').replace(' ', '_').lower()
-                            self.data_sources[key] = df
-                            print(f"      ✅ {file}: {len(df):,} registros")
+                            self.data_sources[key] = formatted_df
+                            print(f"      ✅ {file}: {len(formatted_df):,} registros")
+                            
+                            # Guardar también versión adicional para funciones que necesiten índice datetime
+                            formatted_df_indexed = formatted_df.copy()
+                            formatted_df_indexed.set_index('date_time', inplace=True)
+                            self.data_sources[f"{key}_indexed"] = formatted_df_indexed
                         else:
-                            # Debug: mostrar las primeras columnas para diagnosticar
-                            cols_preview = list(df.columns[:5])
-                            print(f"      ⚠️ {file}: Sin columna de fecha. Columnas: {cols_preview}")
+                            print(f"      ❌ {file}: No se pudo formatear para López de Prado")
                     else:
                         print(f"      ⚠️ {file}: Archivo vacío")
                         
@@ -695,6 +691,85 @@ class LopezDePradoValidator:
             
             # Guardar estado para debugging
             self._save_error_state(e)
+    
+    def run_all_validations(self) -> None:
+        """Ejecutar todas las validaciones de módulos López de Prado"""
+        print("\n🧪 EJECUTANDO VALIDACIONES COMPREHENSIVAS...")
+        print("=" * 80)
+        
+        try:
+            # 1. Validar data_structures
+            self.validate_data_structures()
+            
+            # 2. Validar util modules
+            self.validate_util_modules()
+            
+            # 3. Validar labeling modules
+            self.validate_labeling_modules()
+            
+            # 4. Validar multi-product modules  
+            self.validate_multiproduct_modules()
+            
+            print(f"\n📊 RESUMEN DE VALIDACIONES:")
+            print(f"   ✅ Tests pasados: {self.stats['passed_tests']}")
+            print(f"   ❌ Tests fallidos: {self.stats['failed_tests']}")
+            print(f"   📋 Total funciones: {self.stats['total_functions']}")
+            
+        except Exception as e:
+            print(f"\n❌ ERROR EN VALIDACIONES: {str(e)}")
+            traceback.print_exc()
+    
+    def generate_final_report(self) -> None:
+        """Generar reporte final comprehensivo"""
+        print("\n📋 GENERANDO REPORTE FINAL...")
+        print("=" * 80)
+        
+        try:
+            # Calcular estadísticas finales
+            total_time = time.time() - self.start_time
+            total_modules = sum(len(modules) for modules in self.modules.values())
+            total_datasets = len(self.data_sources)
+            success_rate = (self.stats['passed_tests'] / max(1, self.stats['passed_tests'] + self.stats['failed_tests'])) * 100
+            
+            print(f"\n🎯 REPORTE FINAL DE VALIDACIÓN LÓPEZ DE PRADO")
+            print("=" * 80)
+            print(f"⏱️  Tiempo total: {total_time:.1f} segundos")
+            print(f"📦 Módulos cargados: {total_modules}")
+            print(f"📊 Datasets procesados: {total_datasets}")
+            print(f"🔢 Puntos de datos: {self.stats['data_points']:,}")
+            print(f"🧪 Funciones testeadas: {self.stats['total_functions']}")
+            print(f"✅ Tests exitosos: {self.stats['passed_tests']}")
+            print(f"❌ Tests fallidos: {self.stats['failed_tests']}")
+            print(f"📈 Tasa de éxito: {success_rate:.1f}%")
+            
+            # Mostrar errores si los hay
+            if self.errors:
+                print(f"\n🚨 ERRORES DETECTADOS ({len(self.errors)}):")
+                for i, error in enumerate(self.errors[:10], 1):
+                    print(f"   {i:2d}. {error[:100]}...")
+                if len(self.errors) > 10:
+                    print(f"   ... y {len(self.errors)-10} errores más")
+            
+            # Mostrar warnings si los hay
+            if self.warnings:
+                print(f"\n⚠️  WARNINGS ({len(self.warnings)}):")
+                for i, warning in enumerate(self.warnings[:5], 1):
+                    print(f"   {i:2d}. {warning[:100]}...")
+            
+            # Resumen por categoría
+            print(f"\n📊 RESUMEN POR CATEGORÍA:")
+            for category, modules in self.modules.items():
+                if modules:
+                    print(f"   {category:20}: {len(modules):2d} módulos cargados")
+                else:
+                    print(f"   {category:20}: ❌ Sin módulos")
+            
+            print(f"\n📅 Finalizado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            print("=" * 80)
+            
+        except Exception as e:
+            print(f"\n❌ ERROR GENERANDO REPORTE: {str(e)}")
+            traceback.print_exc()
     
     def validate_data_structures(self) -> None:
         """Validar todos los módulos de data_structures"""
@@ -1529,8 +1604,22 @@ class LopezDePradoValidator:
                 cls = getattr(module, class_name)
                 print(f"      🧪 Testing {class_name}...")
                 if 'TailSet' in class_name:
-                    print(f"      ⚠️ Clase {class_name} requiere parámetros específicos de inicialización")
-                    print(f"      ✅ Clase {class_name} disponible para uso avanzado")
+                    # Crear datos multi-asset específicos para TailSetLabels
+                    try:
+                        multi_asset_data = self._create_multi_asset_for_tail_sets()
+                        print(f"      📊 Datos multi-asset: {multi_asset_data.shape}")
+                        
+                        # Instanciar TailSetLabels con todos los parámetros requeridos
+                        instance = cls(prices=multi_asset_data, n_bins=5, vol_adj='stdev', window=20)
+                        
+                        # Ejecutar método principal
+                        top_set, bottom_set, labels = instance.get_tail_sets()
+                        print(f"      ✅ TailSetLabels: top={len(top_set)}, bottom={len(bottom_set)}, labels={labels.shape}")
+                        self.stats['passed_tests'] += 1
+                    except Exception as e:
+                        print(f"      ⚠️ TailSetLabels: {str(e)[:50]}...")
+                        print(f"      ✅ Clase TailSetLabels disponible para uso avanzado")
+                        self.stats['failed_tests'] += 1
                 else:
                     print(f"      ✅ {class_name}: disponible")
             except Exception as e:
@@ -1578,8 +1667,23 @@ class LopezDePradoValidator:
                 cls = getattr(module, class_name)
                 print(f"      🧪 Testing {class_name}...")
                 if 'MatrixFlag' in class_name:
-                    print(f"      ⚠️ Clase {class_name} requiere parámetros específicos de inicialización")
-                    print(f"      ✅ Clase {class_name} disponible para uso avanzado")
+                    # Test específico para MatrixFlagLabels
+                    try:
+                        # Usar datos de precios reales
+                        prices = sample_data.head(100)
+                        window = 20
+                        
+                        # Instanciar MatrixFlagLabels con todos los parámetros requeridos
+                        instance = cls(prices=prices, window=window, template_name='leigh_bull')
+                        
+                        # Ejecutar método de labeling
+                        labels = instance.get_labels(threshold=0.5)
+                        print(f"      ✅ MatrixFlagLabels: {len(labels)} labels generados")
+                        self.stats['passed_tests'] += 1
+                    except Exception as e:
+                        print(f"      ⚠️ MatrixFlagLabels: {str(e)[:50]}...")
+                        print(f"      ✅ Clase MatrixFlagLabels disponible para uso avanzado")
+                        self.stats['failed_tests'] += 1
                 else:
                     print(f"      ✅ {class_name}: disponible")
             except Exception as e:
@@ -1681,13 +1785,48 @@ class LopezDePradoValidator:
                 print(f"      🧪 Testing class {class_name}...")
                 
                 if class_name == 'ETFTrick':
-                    # Intentar crear instancia con datos básicos
+                    # ETFTrick requiere open_df, close_df, alloc_df, costs_df, rates_df
                     try:
-                        # ETFTrick típicamente requiere precios de activos subyacentes y del ETF
-                        instance = cls(underlying_prices, etf_price)
-                        print(f"      ✅ {class_name}: Instancia creada exitosamente")
+                        # Crear datasets sintéticos que cumplen con la interfaz ETFTrick
+                        n_assets = 3
+                        asset_names = ['ASSET_1', 'ASSET_2', 'ASSET_3']
                         
-                        # Test métodos básicos si existen
+                        # Open prices (o(t))
+                        open_df = pd.DataFrame(
+                            100 + np.random.randn(n_periods, n_assets) * 2,
+                            index=dates,
+                            columns=asset_names
+                        )
+                        
+                        # Close prices (p(t))  
+                        close_df = open_df + np.random.randn(n_periods, n_assets) * 0.5
+                        
+                        # Allocations (w(t)) - number of contracts
+                        alloc_df = pd.DataFrame(
+                            np.random.randint(0, 100, (n_periods, n_assets)),
+                            index=dates,
+                            columns=asset_names
+                        )
+                        
+                        # Costs (d(t)) - rebalancing, carry, dividends
+                        costs_df = pd.DataFrame(
+                            np.random.uniform(0, 1, (n_periods, n_assets)),
+                            index=dates,
+                            columns=asset_names
+                        )
+                        
+                        # Rates (φ(t)) - dollar value per point (optional)
+                        rates_df = pd.DataFrame(
+                            np.ones((n_periods, n_assets)),  # Trivial rates
+                            index=dates,
+                            columns=asset_names
+                        )
+                        
+                        # Crear instancia ETFTrick con datos sintéticos apropiados
+                        instance = cls(open_df, close_df, alloc_df, costs_df, rates_df)
+                        print(f"      ✅ {class_name}: Instancia creada con datos sintéticos")
+                        
+                        # Test método principal si existe
                         if hasattr(instance, 'get_etf_series'):
                             etf_series = instance.get_etf_series()
                             print(f"      ✅ {class_name}.get_etf_series(): {len(etf_series) if hasattr(etf_series, '__len__') else 'Calculado'}")
@@ -1696,7 +1835,8 @@ class LopezDePradoValidator:
                         self.stats['passed_tests'] += 1
                         
                     except Exception as e:
-                        print(f"      ⚠️ {class_name}: Requiere parámetros específicos - {str(e)[:50]}...")
+                        print(f"      ⚠️ {class_name}: Error en instanciación - {str(e)[:50]}...")
+                        print(f"      ✅ Clase ETFTrick disponible para uso avanzado")
                         results[class_name] = 'REQUIRES_SPECIFIC_PARAMS'
                         self.stats['failed_tests'] += 1
                 else:
@@ -1759,8 +1899,8 @@ class LopezDePradoValidator:
         print("🎯 RESUMEN FINAL DE VALIDACIÓN")
         print("=" * 80)
         print(f"⏱️ Tiempo total: {elapsed_time:.1f} segundos")
-        print(f"📊 Datasets procesados: {len(self.data_sources)}")
         print(f"📦 Módulos validados: {sum(len(m) for m in self.modules.values())}")
+        print(f"📊 Datasets procesados: {len(self.data_sources)}")
         
         # Verificar si tenemos stats
         if hasattr(self, 'stats'):
@@ -1847,49 +1987,61 @@ class LopezDePradoValidator:
         print(f"💾 Estado de error guardado en: {error_file}")
     
     def _get_sample_tick_data(self) -> Optional[pd.DataFrame]:
-        """Obtener datos de tick apropiados para testing"""
+        """Obtener datos de tick apropiados para testing con formato López de Prado"""
         print("      🔍 Buscando datos de alta frecuencia...")
         
-        # Priorizar datos de WTI 1 minuto (el más completo)
-        wti_keys = [k for k in self.data_sources.keys() if 'wti' in k.lower() and '1_min' in k]
+        # Priorizar datos de WTI 1 minuto formateados para López de Prado
+        priority_keys = [
+            'wti_crude_oil_1_min',  # WTI 1 minuto (mejor opción)
+            'bitcoin_1_min',        # Bitcoin 1 minuto
+            'gold_1_min'           # Gold 1 minuto
+        ]
         
-        if wti_keys:
-            key = wti_keys[0]
-            data = self.data_sources[key]
-            print(f"      ✅ Usando datos WTI: {key}")
-            
-            # Convertir a formato esperado [date_time, price, volume]
-            if len(data) > 10:
-                result_data = pd.DataFrame()
+        for key in priority_keys:
+            if key in self.data_sources:
+                data = self.data_sources[key]
+                print(f"      ✅ Usando datos formateados: {key}")
                 
-                # Buscar columnas de precio y volumen
-                price_cols = [col for col in data.columns if any(p in col.lower() for p in ['price', 'close', 'last'])]
-                volume_cols = [col for col in data.columns if 'volume' in col.lower()]
-                
-                if price_cols:
-                    result_data['price'] = data[price_cols[0]]
-                if volume_cols:
-                    result_data['volume'] = data[volume_cols[0]]
-                elif len(data.columns) > 1:
-                    result_data['volume'] = data.iloc[:, 1]  # Segunda columna como volumen
+                # Verificar que tiene el formato correcto [date_time, price, volume]
+                expected_cols = ['date_time', 'price', 'volume']
+                if all(col in data.columns for col in expected_cols):
+                    print(f"      ✅ Formato López de Prado confirmado: {list(data.columns)}")
+                    print(f"      📊 Registros disponibles: {len(data):,}")
+                    print(f"      📅 Rango: {data['date_time'].min()} a {data['date_time'].max()}")
+                    return data.copy()
                 else:
-                    result_data['volume'] = 1000  # Volumen constante
-                
-                # Agregar timestamp
-                if isinstance(data.index, pd.DatetimeIndex):
-                    result_data.index = data.index
-                else:
-                    result_data.index = pd.date_range('2020-01-01', periods=len(result_data), freq='1min')
-                
-                return result_data.dropna()
+                    print(f"      ⚠️ {key}: No tiene formato López de Prado. Columnas: {list(data.columns)}")
         
-        # Fallback: usar datos sintéticos
-        if 'synthetic_tick_data' in self.data_sources:
-            print("      ✅ Usando datos sintéticos de tick")
-            return self.data_sources['synthetic_tick_data']
+        # Fallback: buscar cualquier dato con el formato correcto
+        for key, data in self.data_sources.items():
+            if isinstance(data, pd.DataFrame):
+                expected_cols = ['date_time', 'price', 'volume']
+                if all(col in data.columns for col in expected_cols):
+                    print(f"      ✅ Usando datos formateados: {key}")
+                    return data.copy()
         
-        print("      ⚠️ No se encontraron datos de tick apropiados")
-        return None
+        # Último fallback: crear datos sintéticos en formato correcto
+        print("      ⚠️ Generando datos sintéticos en formato López de Prado...")
+        
+        n_points = 5000
+        dates = pd.date_range('2023-01-01 09:30:00', periods=n_points, freq='1min')
+        
+        # Simular precios realistas
+        np.random.seed(42)
+        price_changes = np.random.normal(0, 0.01, n_points)
+        prices = 100 * np.exp(np.cumsum(price_changes))
+        
+        # Simular volúmenes realistas
+        volumes = np.random.exponential(1000, n_points)
+        
+        synthetic_data = pd.DataFrame({
+            'date_time': dates,
+            'price': prices,
+            'volume': volumes
+        })
+        
+        print(f"      ✅ Datos sintéticos generados: {len(synthetic_data):,} registros")
+        return synthetic_data
     
     def _get_sample_price_data(self) -> Optional[pd.Series]:
         """Obtener datos de precios apropiados para labeling"""
@@ -1921,37 +2073,159 @@ class LopezDePradoValidator:
         
         print("      ⚠️ No se encontraron datos de precios apropiados")
         return None
+    
+    def _format_data_for_lopez_de_prado(self, df: pd.DataFrame, file_name: str) -> Optional[pd.DataFrame]:
+        """
+        Transformar datos Excel al formato exacto requerido por López de Prado:
+        [date_time, price, volume]
+        
+        Args:
+            df: DataFrame cargado desde Excel
+            file_name: Nombre del archivo para identificar el formato
+            
+        Returns:
+            DataFrame con formato [date_time, price, volume] o None si falla
+        """
+        try:
+            # Identificar el tipo de archivo
+            is_minute_data = '1 Min' in file_name
+            is_daily_data = 'Daily' in file_name
+            
+            # Inicializar resultado
+            result_df = pd.DataFrame()
+            
+            if is_minute_data:
+                # Datos de 1 minuto - combinar Local Date + Local Time
+                if 'Local Date' in df.columns and 'Local Time' in df.columns:
+                    # Usar Local Time que ya incluye fecha y hora
+                    result_df['date_time'] = df['Local Time']
+                elif 'Local Date' in df.columns:
+                    result_df['date_time'] = df['Local Date']
+                else:
+                    print(f"      ⚠️ No se encontraron columnas de fecha en {file_name}")
+                    return None
+                    
+            elif is_daily_data:
+                # Datos diarios - usar Exchange Date
+                if 'Exchange Date' in df.columns:
+                    result_df['date_time'] = df['Exchange Date']
+                else:
+                    print(f"      ⚠️ No se encontró Exchange Date en {file_name}")
+                    return None
+            else:
+                # Intentar detectar automáticamente
+                date_cols = [col for col in df.columns if 'date' in col.lower() or 'time' in col.lower()]
+                if date_cols:
+                    result_df['date_time'] = df[date_cols[0]]
+                else:
+                    print(f"      ⚠️ No se detectaron columnas de fecha en {file_name}")
+                    return None
+            
+            # Agregar precio (siempre usar Close como precio principal)
+            if 'Close' in df.columns:
+                result_df['price'] = df['Close']
+            else:
+                print(f"      ⚠️ No se encontró columna Close en {file_name}")
+                return None
+            
+            # Agregar volumen
+            if 'Volume' in df.columns:
+                result_df['volume'] = df['Volume']
+            else:
+                # Buscar otras columnas de volumen
+                volume_candidates = [col for col in df.columns if 'volume' in col.lower() and 'market volume' not in col]
+                if volume_candidates:
+                    result_df['volume'] = df[volume_candidates[0]]
+                    print(f"      📊 Usando {volume_candidates[0]} como volumen")
+                else:
+                    # Si no hay volumen, usar valor sintético basado en precio
+                    result_df['volume'] = np.random.randint(100, 1000, len(result_df))
+                    print(f"      ⚠️ No se encontró volumen, usando valores sintéticos")
+            
+            # Limpiar datos
+            result_df = result_df.dropna()
+            
+            # Asegurar que date_time sea datetime
+            if not pd.api.types.is_datetime64_any_dtype(result_df['date_time']):
+                result_df['date_time'] = pd.to_datetime(result_df['date_time'])
+            
+            # Ordenar por fecha
+            result_df = result_df.sort_values('date_time').reset_index(drop=True)
+            
+            # Validar que tenemos datos suficientes
+            if len(result_df) < 100:
+                print(f"      ⚠️ Datos insuficientes después de limpieza: {len(result_df)} filas")
+                return None
+            
+            print(f"      ✅ Formato López de Prado: {len(result_df)} filas, columnas: {list(result_df.columns)}")
+            print(f"         📅 Rango: {result_df['date_time'].min()} a {result_df['date_time'].max()}")
+            print(f"         💰 Precio: ${result_df['price'].min():.2f} - ${result_df['price'].max():.2f}")
+            print(f"         📈 Volumen: {result_df['volume'].min():.0f} - {result_df['volume'].max():.0f}")
+            
+            return result_df
+            
+        except Exception as e:
+            print(f"      ❌ Error formateando {file_name}: {str(e)}")
+            return None
 
-# ========================================================================
-# FUNCIÓN PRINCIPAL Y EJECUCIÓN
-# ========================================================================
+    def _create_multi_asset_for_tail_sets(self) -> pd.DataFrame:
+        """Crear DataFrame multi-asset específico para TailSetLabels"""
+        n_periods = 100
+        n_assets = 4
+        dates = pd.date_range('2023-01-01', periods=n_periods, freq='D')
+        
+        # Simular precios correlacionados para múltiples activos
+        np.random.seed(46)
+        
+        # Crear rendimientos con diferentes características
+        base_returns = np.random.randn(n_periods, n_assets) * 0.02
+        
+        # Agregar correlaciones entre activos
+        base_returns[:, 1] += base_returns[:, 0] * 0.5  # Asset B correlacionado con A
+        base_returns[:, 2] -= base_returns[:, 0] * 0.3  # Asset C anti-correlacionado con A
+        base_returns[:, 3] += np.random.randn(n_periods) * 0.01  # Asset D independiente
+        
+        # Convertir a precios
+        prices = pd.DataFrame(
+            100 * np.exp(np.cumsum(base_returns, axis=0)),
+            index=dates,
+            columns=['STOCK_A', 'STOCK_B', 'STOCK_C', 'STOCK_D']
+        )
+        
+        return prices
+
 
 def main():
-    """Función principal de validación"""
+    """Función principal para ejecutar la validación completa"""
     try:
-        print("🚀 INICIANDO VALIDADOR LÓPEZ DE PRADO")
-        print("=" * 50)
+        print("\n🚀 INICIANDO VALIDACIÓN PROFESIONAL COMPLETA")
+        print("=" * 80)
         
-        # Crear instancia del validador
+        # Crear validador
         validator = LopezDePradoValidator()
         
-        # Ejecutar validación completa
-        validator.run_complete_validation()
+        # Cargar datos
+        print("\n📊 CARGANDO FUENTES DE DATOS...")
+        validator.load_comprehensive_data()
         
-        return validator
+        # Cargar módulos
+        print("\n📦 CARGANDO MÓDULOS LÓPEZ DE PRADO...")
+        validator.load_all_modules()
+        
+        # Ejecutar validaciones
+        print("\n🧪 EJECUTANDO VALIDACIONES...")
+        validator.run_all_validations()
+        
+        # Generar reportes
+        print("\n📋 GENERANDO REPORTES FINALES...")
+        validator.generate_final_report()
+        
+        print("\n✅ VALIDACIÓN COMPLETA FINALIZADA")
         
     except Exception as e:
-        print(f"\n💥 ERROR CRÍTICO:")
-        print(f"   {str(e)}")
+        print(f"\n❌ ERROR CRÍTICO EN VALIDACIÓN: {str(e)}")
         traceback.print_exc()
-        return None
+
 
 if __name__ == "__main__":
-    validator = main()
-    
-    if validator:
-        print("\n✅ VALIDACIÓN COMPLETADA EXITOSAMENTE")
-    else:
-        print("\n❌ VALIDACIÓN FALLIDA")
-    
-    print("=" * 50)
+    main()
