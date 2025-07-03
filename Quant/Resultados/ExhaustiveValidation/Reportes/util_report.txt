@@ -1,0 +1,281 @@
+REPORTE DE VALIDACIÓN - MÓDULO UTIL
+============================================================
+
+Fecha: 2025-07-03 02:42:36
+
+ESTADÍSTICAS GENERALES:
+-------------------------
+Total de funciones: 34
+Funciones validadas: 6
+Funciones fallidas: 28
+Tasa de éxito: 17.6%
+
+DETALLES POR FUNCIÓN:
+-------------------------
+
+Función: ewma_halflife
+Archivo: fast_ewma.py
+Argumentos: arr_in, halflife
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: ewma_com
+Archivo: fast_ewma.py
+Argumentos: arr_in, com
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: get_ewma_info
+Archivo: fast_ewma.py
+Argumentos: 
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: ewma
+Archivo: fast_ewma.py
+Argumentos: arr_in, window
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: ewma_vectorized
+Archivo: fast_ewma.py
+Argumentos: arr_in, window
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: ewma_alpha
+Archivo: fast_ewma.py
+Argumentos: arr_in, alpha
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: jit
+Archivo: fast_ewma.py
+Argumentos: 
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: get_classification_data
+Archivo: generate_dataset.py
+Argumentos: n_features, n_informative, n_redundant, n_samples, random_state, sigma
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: get_regression_data
+Archivo: generate_dataset.py
+Argumentos: n_features, n_informative, n_targets, n_samples, noise, random_state
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: get_financial_data_synthetic
+Archivo: generate_dataset.py
+Argumentos: n_samples, n_assets, start_price, volatility, correlation, random_state
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: lin_parts
+Archivo: multiprocess.py
+Argumentos: num_atoms, num_threads
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: nested_parts
+Archivo: multiprocess.py
+Argumentos: num_atoms, num_threads, upper_triangle
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: mp_pandas_obj
+Archivo: multiprocess.py
+Argumentos: func, pd_obj, num_threads, mp_batches, lin_mols, verbose
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: process_jobs_
+Archivo: multiprocess.py
+Argumentos: jobs
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: expand_call
+Archivo: multiprocess.py
+Argumentos: kargs
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: report_progress
+Archivo: multiprocess.py
+Argumentos: job_num, num_jobs, time0, task
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: process_jobs
+Archivo: multiprocess.py
+Argumentos: jobs, task, num_threads, verbose
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: get_bvc_buy_volume
+Archivo: volume_classifier.py
+Argumentos: close, volume, window
+Estado: ✅ VALIDADA
+Tests realizados: 3
+Tests exitosos: 3
+Tiempo promedio: 0.4274s
+
+----------------------------------------
+
+Función: get_tick_rule_buy_volume
+Archivo: volume_classifier.py
+Argumentos: close, volume
+Estado: ✅ VALIDADA
+Tests realizados: 3
+Tests exitosos: 3
+Tiempo promedio: 0.0007s
+
+----------------------------------------
+
+Función: get_quote_rule_buy_volume
+Archivo: volume_classifier.py
+Argumentos: close, bid, ask, volume
+Estado: ❌ FALLIDA
+Tests realizados: 3
+Tests exitosos: 0
+
+----------------------------------------
+
+Función: get_daily_vol
+Archivo: volatility.py
+Argumentos: close, lookback, span, window
+Estado: ✅ VALIDADA
+Tests realizados: 3
+Tests exitosos: 3
+Tiempo promedio: 0.0010s
+
+----------------------------------------
+
+Función: get_parksinson_vol
+Archivo: volatility.py
+Argumentos: high, low, window
+Estado: ❌ FALLIDA
+Tests realizados: 3
+Tests exitosos: 0
+
+----------------------------------------
+
+Función: get_garman_class_vol
+Archivo: volatility.py
+Argumentos: open, high, low, close, window
+Estado: ✅ VALIDADA
+Tests realizados: 3
+Tests exitosos: 3
+Tiempo promedio: 0.0013s
+
+----------------------------------------
+
+Función: get_yang_zhang_vol
+Archivo: volatility.py
+Argumentos: open, high, low, close, window
+Estado: ✅ VALIDADA
+Tests realizados: 3
+Tests exitosos: 3
+Tiempo promedio: 0.0022s
+
+----------------------------------------
+
+Función: get_rogers_satchell_vol
+Archivo: volatility.py
+Argumentos: open, high, low, close, window
+Estado: ✅ VALIDADA
+Tests realizados: 3
+Tests exitosos: 3
+Tiempo promedio: 0.0012s
+
+----------------------------------------
+
+Función: get_ewma_vol
+Archivo: volatility.py
+Argumentos: returns, alpha, initial_vol
+Estado: ❌ FALLIDA
+Tests realizados: 3
+Tests exitosos: 0
+
+----------------------------------------
+
+Función: crop_data_frame_in_batches
+Archivo: misc.py
+Argumentos: df, chunksize
+Estado: ❌ FALLIDA
+Tests realizados: 3
+Tests exitosos: 0
+
+----------------------------------------
+
+Función: bootstrap_sample_indices
+Archivo: misc.py
+Argumentos: length, n_samples, random_state
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+
+Función: get_sample_weights
+Archivo: misc.py
+Argumentos: returns, lookback
+Estado: ❌ FALLIDA
+Tests realizados: 3
+Tests exitosos: 0
+
+----------------------------------------
+
+Función: apply_pca_weights
+Archivo: misc.py
+Argumentos: returns, n_components
+Estado: ❌ FALLIDA
+Tests realizados: 3
+Tests exitosos: 0
+
+----------------------------------------
+
+Función: winsorize_series
+Archivo: misc.py
+Argumentos: series, limits
+Estado: ❌ FALLIDA
+Tests realizados: 0
+
+----------------------------------------
+

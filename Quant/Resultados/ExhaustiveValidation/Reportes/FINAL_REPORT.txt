@@ -1,0 +1,44 @@
+REPORTE FINAL - VALIDACIÓN EXHAUSTIVA LÓPEZ DE PRADO
+============================================================
+
+Fecha: 2025-07-03 02:42:42
+Tiempo de ejecución: 24.56 segundos
+
+RESUMEN GENERAL:
+--------------------
+Total de funciones analizadas: 95
+Funciones validadas exitosamente: 18
+Funciones con errores: 77
+Tasa de éxito global: 18.9%
+
+RESUMEN POR MÓDULO:
+--------------------
+
+DATA_STRUCTURES:
+  - Total funciones: 34
+  - Validadas: 4
+  - Fallidas: 30
+  - Tasa éxito: 11.8%
+
+UTIL:
+  - Total funciones: 34
+  - Validadas: 6
+  - Fallidas: 28
+  - Tasa éxito: 17.6%
+
+LABELING:
+  - Total funciones: 21
+  - Validadas: 8
+  - Fallidas: 13
+  - Tasa éxito: 38.1%
+
+MULTI_PRODUCT:
+  - Total funciones: 6
+  - Validadas: 0
+  - Fallidas: 6
+  - Tasa éxito: 0.0%
+
+Datos utilizados:
+  - Datasets sintéticos: 9
+  - Datasets reales: 20
+  - Total datasets: 29

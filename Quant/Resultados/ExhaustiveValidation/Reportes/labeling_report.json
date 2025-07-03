@@ -1,0 +1,64 @@
+{
+  "functions": {
+    "tail_sets.py::tail_sets_labels_simple": {
+      "name": "tail_sets_labels_simple",
+      "file": "tail_sets.py",
+      "args": [
+        "prices",
+        "n_bins",
+        "vol_adj",
+        "window"
+      ],
+      "tests": [
+        {
+          "dataset": "synthetic_tick_data_short",
+          "success": false,
+          "error": "'Series' object has no attribute 'columns'",
+          "execution_time": 0.0010814666748046875,
+          "output_info": {}
+        },
+        {
+          "dataset": "synthetic_tick_data_medium",
+          "success": false,
+          "error": "'Series' object has no attribute 'columns'",
+          "execution_time": 0.0009236335754394531,
+          "output_info": {}
+        },
+        {
+          "dataset": "synthetic_tick_data_long",
+          "success": false,
+          "error": "'Series' object has no attribute 'columns'",
+          "execution_time": 0.0019457340240478516,
+          "output_info": {}
+        }
+      ],
+      "success": false,
+      "error": null,
+      "metrics": {
+        "success_rate": 0.0
+      },
+      "graphs": []
+    },
+    "raw_return.py::raw_return": {
+      "name": "raw_return",
+      "file": "raw_return.py",
+      "args": [
+        "prices",
+        "binary",
+        "logarithmic",
+        "resample_by",
+        "lag"
+      ],
+      "tests": [
+        {
+          "dataset": "synthetic_tick_data_short",
+          "success": true,
+          "error": null,
+          "execution_time": 0.0003688335418701172,
+          "output_info": {
+            "type": "Series",
+            "size": 1000,
+            "shape": [
+              1000
+            ],
+            "has_nan": 

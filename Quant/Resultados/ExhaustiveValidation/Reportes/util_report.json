@@ -1,0 +1,257 @@
+{
+  "functions": {
+    "fast_ewma.py::ewma_halflife": {
+      "name": "ewma_halflife",
+      "file": "fast_ewma.py",
+      "args": [
+        "arr_in",
+        "halflife"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "fast_ewma.py::ewma_com": {
+      "name": "ewma_com",
+      "file": "fast_ewma.py",
+      "args": [
+        "arr_in",
+        "com"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "fast_ewma.py::get_ewma_info": {
+      "name": "get_ewma_info",
+      "file": "fast_ewma.py",
+      "args": [],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "fast_ewma.py::ewma": {
+      "name": "ewma",
+      "file": "fast_ewma.py",
+      "args": [
+        "arr_in",
+        "window"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "fast_ewma.py::ewma_vectorized": {
+      "name": "ewma_vectorized",
+      "file": "fast_ewma.py",
+      "args": [
+        "arr_in",
+        "window"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "fast_ewma.py::ewma_alpha": {
+      "name": "ewma_alpha",
+      "file": "fast_ewma.py",
+      "args": [
+        "arr_in",
+        "alpha"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "fast_ewma.py::jit": {
+      "name": "jit",
+      "file": "fast_ewma.py",
+      "args": [],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "generate_dataset.py::get_classification_data": {
+      "name": "get_classification_data",
+      "file": "generate_dataset.py",
+      "args": [
+        "n_features",
+        "n_informative",
+        "n_redundant",
+        "n_samples",
+        "random_state",
+        "sigma"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "generate_dataset.py::get_regression_data": {
+      "name": "get_regression_data",
+      "file": "generate_dataset.py",
+      "args": [
+        "n_features",
+        "n_informative",
+        "n_targets",
+        "n_samples",
+        "noise",
+        "random_state"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "generate_dataset.py::get_financial_data_synthetic": {
+      "name": "get_financial_data_synthetic",
+      "file": "generate_dataset.py",
+      "args": [
+        "n_samples",
+        "n_assets",
+        "start_price",
+        "volatility",
+        "correlation",
+        "random_state"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "multiprocess.py::lin_parts": {
+      "name": "lin_parts",
+      "file": "multiprocess.py",
+      "args": [
+        "num_atoms",
+        "num_threads"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "multiprocess.py::nested_parts": {
+      "name": "nested_parts",
+      "file": "multiprocess.py",
+      "args": [
+        "num_atoms",
+        "num_threads",
+        "upper_triangle"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "multiprocess.py::mp_pandas_obj": {
+      "name": "mp_pandas_obj",
+      "file": "multiprocess.py",
+      "args": [
+        "func",
+        "pd_obj",
+        "num_threads",
+        "mp_batches",
+        "lin_mols",
+        "verbose"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "multiprocess.py::process_jobs_": {
+      "name": "process_jobs_",
+      "file": "multiprocess.py",
+      "args": [
+        "jobs"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "multiprocess.py::expand_call": {
+      "name": "expand_call",
+      "file": "multiprocess.py",
+      "args": [
+        "kargs"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "multiprocess.py::report_progress": {
+      "name": "report_progress",
+      "file": "multiprocess.py",
+      "args": [
+        "job_num",
+        "num_jobs",
+        "time0",
+        "task"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "multiprocess.py::process_jobs": {
+      "name": "process_jobs",
+      "file": "multiprocess.py",
+      "args": [
+        "jobs",
+        "task",
+        "num_threads",
+        "verbose"
+      ],
+      "tests": [],
+      "success": false,
+      "error": null,
+      "metrics": {},
+      "graphs": []
+    },
+    "volume_classifier.py::get_bvc_buy_volume": {
+      "name": "get_bvc_buy_volume",
+      "file": "volume_classifier.py",
+      "args": [
+        "close",
+        "volume",
+        "window"
+      ],
+      "tests": [
+        {
+          "dataset": "synthetic_tick_data_short",
+          "success": true,
+          "error": null,
+          "execution_time": 0.060019493103027344,
+          "output_info": {
+            "type": "Series",
+            "size": 1000,
+            "shape": [
+              1000
+            ],
+            "has_nan": 
