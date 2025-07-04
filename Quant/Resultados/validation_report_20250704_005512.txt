@@ -1,0 +1,147 @@
+REPORTE DE VALIDACIÓN EXHAUSTIVA - LÓPEZ DE PRADO
+============================================================
+
+Fecha de ejecución: 2025-07-04 00:55:12
+Tiempo total de ejecución: 0.00 segundos
+
+RESUMEN EJECUTIVO
+--------------------
+Total categorías validadas: 4
+Total módulos validados: 23
+Total funciones probadas: 176
+Total funciones exitosas: 172
+Tasa de éxito general: 97.7%
+
+CATEGORÍA: DATA_STRUCTURES
+------------------------------
+
+  Módulo: data_structures
+  Funciones probadas: 28
+  Funciones exitosas: 28
+  Tasa de éxito: 100.0%
+
+  Módulo: standard_data_structures
+  Funciones probadas: 16
+  Funciones exitosas: 16
+  Tasa de éxito: 100.0%
+
+  Módulo: imbalance_data_structures
+  Funciones probadas: 17
+  Funciones exitosas: 17
+  Tasa de éxito: 100.0%
+
+  Módulo: run_data_structures
+  Funciones probadas: 17
+  Funciones exitosas: 17
+  Tasa de éxito: 100.0%
+
+CATEGORÍA: UTIL
+------------------------------
+
+  Módulo: volume_classifier
+  Funciones probadas: 4
+  Funciones exitosas: 4
+  Tasa de éxito: 100.0%
+
+  Módulo: fast_ewma
+  Funciones probadas: 7
+  Funciones exitosas: 7
+  Tasa de éxito: 100.0%
+
+  Módulo: volatility
+  Funciones probadas: 6
+  Funciones exitosas: 6
+  Tasa de éxito: 100.0%
+
+  Módulo: misc
+  Funciones probadas: 2
+  Funciones exitosas: 2
+  Tasa de éxito: 100.0%
+
+  Módulo: generate_dataset
+  Funciones probadas: 4
+  Funciones exitosas: 4
+  Tasa de éxito: 100.0%
+
+  Módulo: multiprocess
+  Funciones probadas: 7
+  Funciones exitosas: 7
+  Tasa de éxito: 100.0%
+
+CATEGORÍA: LABELING
+------------------------------
+
+  Módulo: labeling
+  Funciones probadas: 16
+  Funciones exitosas: 14
+  Tasa de éxito: 87.5%
+
+  Módulo: trend_scanning
+  Funciones probadas: 4
+  Funciones exitosas: 4
+  Tasa de éxito: 100.0%
+
+  Módulo: bull_bear
+  Funciones probadas: 4
+  Funciones exitosas: 4
+  Tasa de éxito: 100.0%
+
+  Módulo: excess_over_mean
+  Funciones probadas: 2
+  Funciones exitosas: 2
+  Tasa de éxito: 100.0%
+
+  Módulo: excess_over_median
+  Funciones probadas: 2
+  Funciones exitosas: 2
+  Tasa de éxito: 100.0%
+
+  Módulo: fixed_time_horizon
+  Funciones probadas: 3
+  Funciones exitosas: 3
+  Tasa de éxito: 100.0%
+
+  Módulo: raw_return
+  Funciones probadas: 2
+  Funciones exitosas: 2
+  Tasa de éxito: 100.0%
+
+  Módulo: tail_sets
+  Funciones probadas: 5
+  Funciones exitosas: 5
+  Tasa de éxito: 100.0%
+
+  Módulo: return_vs_benchmark
+  Funciones probadas: 2
+  Funciones exitosas: 2
+  Tasa de éxito: 100.0%
+
+  Módulo: matrix_flags
+  Funciones probadas: 2
+  Funciones exitosas: 2
+  Tasa de éxito: 100.0%
+
+CATEGORÍA: MULTI_PRODUCT
+------------------------------
+
+  Módulo: multi_product
+  Funciones probadas: 7
+  Funciones exitosas: 7
+  Tasa de éxito: 100.0%
+
+  Módulo: etf_trick
+  Funciones probadas: 7
+  Funciones exitosas: 7
+  Tasa de éxito: 100.0%
+
+  Módulo: futures_roll
+  Funciones probadas: 12
+  Funciones exitosas: 10
+  Tasa de éxito: 83.3%
+
+ANÁLISIS DE PERFORMANCE
+-------------------------
+Tiempo promedio por test: 0.0012 segundos
+Tiempo mínimo: 0.0000 segundos
+Tiempo máximo: 0.5270 segundos
+Desviación estándar: 0.0187 segundos
