@@ -125,12 +125,19 @@ class TestBaseBarsAdvanced:
     - HTML report generation
     """
     
-    def __init__(self, save_path: str = "./test_results_base_bars/"):
+    def __init__(self, save_path: str = None):
         """
         Initialize the testing framework
         
         :param save_path: Path to save test results, plots, and reports
         """
+        if save_path is None:
+            # Create results in the Results Machine Learning structure
+            current_dir = os.path.dirname(__file__)
+            project_root = os.path.join(current_dir, '..', '..')
+            results_dir = os.path.join(project_root, 'Results Machine Learning', 'data_structures')
+            save_path = os.path.join(results_dir, 'test_results_base_bars')
+        
         self.save_path = save_path
         self.results = {}
         self.performance_metrics = {}
@@ -1501,8 +1508,8 @@ def main():
     print("🚀 Starting Base Bars Advanced Testing Suite")
     print("=" * 60)
     
-    # Initialize testing framework with specific results directory
-    tester = TestBaseBarsAdvanced(save_path="./test_results_base_bars/")
+    # Initialize testing framework
+    tester = TestBaseBarsAdvanced()
     
     # Run comprehensive tests
     results = tester.run_comprehensive_tests()

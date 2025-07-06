@@ -1,0 +1,13 @@
+{
+  "total_modules": 1,
+  "total_tests": 6,
+  "total_passed": 6,
+  "total_failed": 0,
+  "total_plots": 3,
+  "modules_by_category": {
+    "data_structures": 1
+  },
+  "performance_summary": {},
+  "last_update": "2025-07-06T01:43:34.819733",
+  "success_rate": 100.0
+}

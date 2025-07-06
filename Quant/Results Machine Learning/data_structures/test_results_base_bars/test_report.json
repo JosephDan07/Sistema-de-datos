@@ -1,0 +1,130 @@
+{
+  "test_date": "2025-07-06 01:42:55",
+  "tests_run": 6,
+  "tests_passed": 6,
+  "tests_failed": 0,
+  "performance_metrics": {
+    "1000": {
+      "time": {
+        "execution_time": 0.008491992950439453,
+        "bars_generated": 0,
+        "throughput": 117757.98753439273,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "tick": {
+        "execution_time": 0.00034546852111816406,
+        "bars_generated": 0,
+        "throughput": 2894619.7377501726,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "volume": {
+        "execution_time": 0.0003116130828857422,
+        "bars_generated": 0,
+        "throughput": 3209107.880642693,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "dollar": {
+        "execution_time": 0.00033545494079589844,
+        "bars_generated": 0,
+        "throughput": 2981026.2970859986,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      }
+    },
+    "10000": {
+      "time": {
+        "execution_time": 0.000377655029296875,
+        "bars_generated": 0,
+        "throughput": 26479191.91919192,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "tick": {
+        "execution_time": 0.0003066062927246094,
+        "bars_generated": 0,
+        "throughput": 32615116.6407465,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "volume": {
+        "execution_time": 0.00035381317138671875,
+        "bars_generated": 0,
+        "throughput": 28263504.043126684,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "dollar": {
+        "execution_time": 0.00031447410583496094,
+        "bars_generated": 0,
+        "throughput": 31799120.54586808,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      }
+    },
+    "50000": {
+      "time": {
+        "execution_time": 0.0002846717834472656,
+        "bars_generated": 0,
+        "throughput": 175640871.02177554,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "tick": {
+        "execution_time": 0.00024628639221191406,
+        "bars_generated": 0,
+        "throughput": 203015682.4782188,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "volume": {
+        "execution_time": 0.00022935867309570312,
+        "bars_generated": 0,
+        "throughput": 217999168.3991684,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "dollar": {
+        "execution_time": 0.00021266937255859375,
+        "bars_generated": 0,
+        "throughput": 235106726.4573991,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      }
+    }
+  },
+  "statistical_analysis": {},
+  "plots_generated": [
+    "/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_data_structures/../../Results Machine Learning/data_structures/test_results_base_bars/price_comparison.png",
+    "/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_data_structures/../../Results Machine Learning/data_structures/test_results_base_bars/volume_analysis.png",
+    "/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_data_structures/../../Results Machine Learning/data_structures/test_results_base_bars/performance_analysis.png"
+  ],
+  "errors": [],
+  "warnings": [],
+  "stress_tests": {
+    "extreme_volatility": {
+      "passed": true,
+      "bars_generated": 0,
+      "processing_time": 0.00016427040100097656,
+      "data_size": 5000,
+      "message": "Successfully handled extreme volatility"
+    },
+    "large_dataset": {
+      "passed": true,
+      "bars_generated": 0,
+      "processing_time": 0.0001819133758544922,
+      "data_size": 50000,
+      "throughput": 274856094.3643513,
+      "message": "Successfully processed 50000 samples"
+    },
+    "edge_cases": {
+      "passed": true,
+      "identical_prices_bars": 0,
+      "monotonic_prices_bars": 0,
+      "message": "Successfully handled edge cases"
+    }
+  },
+  "interactive_dashboard": "/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_data_structures/../../Results Machine Learning/data_structures/test_results_base_bars/interactive_dashboard.html"
+}
