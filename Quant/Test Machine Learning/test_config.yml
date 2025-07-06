@@ -1,0 +1,125 @@
+# Advanced ML Testing Configuration
+# ====================================
+
+# Test Configuration
+test_config:
+  # Data generation settings
+  synthetic_data:
+    default_samples: 50000
+    price_start: 100.0
+    volatility: 0.02
+    trend: 0.0001
+    include_gaps: true
+    include_outliers: true
+    random_seed: 42
+  
+  # Performance benchmarking
+  performance:
+    data_sizes: [1000, 5000, 10000, 50000, 100000]
+    timeout_seconds: 300
+    memory_limit_mb: 1024
+    benchmark_iterations: 3
+  
+  # Statistical analysis
+  statistical:
+    significance_level: 0.05
+    confidence_interval: 0.95
+    min_samples_for_tests: 100
+    max_samples_for_normality: 5000
+  
+  # Stress testing
+  stress:
+    extreme_outlier_multiplier: 10
+    missing_data_percentage: 0.1
+    duplicate_data_percentage: 0.05
+    memory_stress_multiplier: 5
+  
+  # Visualization settings
+  visualization:
+    plot_width: 1200
+    plot_height: 800
+    color_palette: "husl"
+    save_format: "html"
+    include_interactive: true
+  
+  # Output settings
+  output:
+    save_individual_plots: true
+    save_combined_report: true
+    save_raw_data: true
+    save_statistics: true
+    compression: "gzip"
+
+# Module-specific configurations
+module_configs:
+  data_structures:
+    batch_sizes: [10000, 50000, 100000]
+    bar_types: ["time", "tick", "volume", "dollar"]
+    test_scenarios: ["normal", "extreme", "missing_data", "outliers"]
+  
+  labeling:
+    label_types: ["triple_barrier", "trend_scanning", "raw_return"]
+    horizons: [10, 20, 50, 100]
+    thresholds: [0.01, 0.02, 0.05]
+  
+  features:
+    feature_types: ["fracdiff", "technical", "microstructure"]
+    lookback_periods: [20, 50, 100]
+    update_frequencies: ["daily", "hourly", "minute"]
+  
+  util:
+    ewma_spans: [10, 20, 50]
+    bootstrap_samples: [1000, 5000, 10000]
+    multiprocessing_cores: 4
+
+# Report settings
+reporting:
+  html_template: "advanced"
+  include_plots: true
+  include_statistics: true
+  include_recommendations: true
+  include_error_analysis: true
+  auto_open_report: false
+  
+  # Dashboard settings
+  dashboard:
+    refresh_interval: 30
+    auto_update: false
+    show_realtime_metrics: true
+    include_performance_monitoring: true
+
+# Quality thresholds
+quality_thresholds:
+  data_quality_score: 80.0
+  performance_regression_threshold: 0.2  # 20% slowdown
+  error_rate_threshold: 0.05  # 5% error rate
+  memory_usage_threshold: 0.8  # 80% of available memory
+  execution_time_threshold: 300  # 5 minutes per module
+
+# Environment settings
+environment:
+  python_version: "3.9+"
+  required_packages:
+    - numpy
+    - pandas
+    - scipy
+    - matplotlib
+    - seaborn
+    - plotly
+    - statsmodels
+    - scikit-learn
+  
+  optional_packages:
+    - numba
+    - cython
+    - joblib
+    - dask
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  save_logs: true
+  log_file: "test_execution.log"
+  max_log_size: "10MB"
+  backup_count: 5

@@ -6,9 +6,15 @@ duplicated code.
 from abc import ABC, abstractmethod
 from typing import Tuple, Union, Generator, Iterable, Optional, List
 import warnings
+import logging
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def _crop_data_frame_in_batches(df: pd.DataFrame, chunksize: int) -> list:
@@ -68,10 +74,22 @@ class BaseBars(ABC):
 
         :param metric: (str) Type of bar to create. Example: dollar_bars, tick_imbalance, etc.
         :param batch_size: (int) Number of rows to read in from the csv, per batch.
+        :raises ValueError: If parameters are invalid
         """
+        # Validate inputs
+        if not isinstance(metric, str) or not metric.strip():
+            raise ValueError("metric must be a non-empty string")
+        
+        if not isinstance(batch_size, int) or batch_size <= 0:
+            raise ValueError("batch_size must be a positive integer")
+        
+        if batch_size > 50000000:  # 50M rows safety limit
+            logger.warning(f"Very large batch_size ({batch_size}). This may cause memory issues.")
+        
         # Base properties
-        self.metric = metric
-        self.batch_size = int(batch_size)
+        self.metric = metric.strip()
+        self.batch_size = batch_size
+        self.creation_time = datetime.now()
         
         # Bar construction
         self.open_price = None
@@ -97,8 +115,16 @@ class BaseBars(ABC):
         self.run_tick_statistics = {'num_ticks_bar': []}
         
         # Warm-up period management (López de Prado recommendation)
-        self.warm_up_period = 100  # Number of bars for warm-up
+        self.warm_up_period = kwargs.get('warm_up_period', 100)
         self.is_warm_up_complete = False
+        
+        # Statistics tracking
+        self.total_bars_generated = 0
+        self.total_ticks_processed = 0
+        self.processing_errors = 0
+        
+        logger.info(f"Initialized {self.metric} bars with batch_size={self.batch_size}")
+        logger.debug(f"Warm-up period set to {self.warm_up_period} bars")
 
     def _reset_cache(self):
         """
@@ -126,52 +152,115 @@ class BaseBars(ABC):
         :param output_path: (str) Path to results file, if to_csv = True
 
         :return: (pd.DataFrame or None) Financial data structure
+        :raises ValueError: If parameters are invalid
+        :raises FileNotFoundError: If input file doesn't exist
+        :raises Exception: For other processing errors
         """
         
+        start_time = datetime.now()
+        logger.info(f"Starting batch_run for {self.metric} bars")
+        
+        # Validate parameters
         if to_csv and output_path is None:
             raise ValueError("output_path must be specified when to_csv=True")
+        
+        if to_csv and not isinstance(output_path, str):
+            raise ValueError("output_path must be a string")
             
         list_bars = []
+        batch_count = 0
         
-        # Process data in batches
-        total_bars_generated = 0
-        for batch in self._batch_iterator(file_path_or_df):
-            if verbose:
-                print(f'Processing batch with {len(batch)} rows...')
-            
-            # Validate and clean data quality (re-enabled)
-            batch = self._validate_data_quality(batch)
-            if len(batch) == 0:
-                if verbose:
-                    print("Batch empty after data cleaning, skipping...")
-                continue
+        try:
+            # Process data in batches
+            for batch in self._batch_iterator(file_path_or_df):
+                batch_count += 1
+                batch_start_time = datetime.now()
                 
-            # Extract bars from current batch
-            list_bars_batch = self._extract_bars(batch)
-            list_bars.extend(list_bars_batch)
-            
-            # Check warm-up completion (re-enabled)
-            total_bars_generated += len(list_bars_batch)
-            self._check_warm_up_completion(total_bars_generated)
-            
-            if verbose and list_bars_batch:
-                print(f'Generated {len(list_bars_batch)} bars from batch')
+                if verbose:
+                    logger.info(f'Processing batch {batch_count} with {len(batch)} rows...')
+                
+                # Validate first batch format
+                if batch_count == 1:
+                    try:
+                        self._assert_csv(batch)
+                        logger.debug("Data format validation passed")
+                    except Exception as e:
+                        logger.error(f"Data format validation failed: {e}")
+                        raise
+                
+                # Validate and clean data quality
+                try:
+                    batch = self._validate_data_quality(batch)
+                    if len(batch) == 0:
+                        logger.warning(f"Batch {batch_count} empty after data cleaning, skipping...")
+                        continue
+                except Exception as e:
+                    logger.error(f"Data quality validation failed for batch {batch_count}: {e}")
+                    self.processing_errors += 1
+                    continue
+                    
+                # Extract bars from current batch
+                try:
+                    list_bars_batch = self._extract_bars(batch)
+                    list_bars.extend(list_bars_batch)
+                    
+                    # Update statistics
+                    self.total_bars_generated += len(list_bars_batch)
+                    self.total_ticks_processed += len(batch)
+                    
+                    # Check warm-up completion
+                    self._check_warm_up_completion(self.total_bars_generated)
+                    
+                    batch_duration = datetime.now() - batch_start_time
+                    if verbose and list_bars_batch:
+                        logger.info(f'Generated {len(list_bars_batch)} bars from batch {batch_count} in {batch_duration.total_seconds():.2f}s')
+                        
+                except Exception as e:
+                    logger.error(f"Error extracting bars from batch {batch_count}: {e}")
+                    self.processing_errors += 1
+                    continue
         
+        except Exception as e:
+            logger.error(f"Critical error in batch processing: {e}")
+            raise
+        
+        # Final validation and output
         if not list_bars:
-            warnings.warn("No bars were generated. Check your data format and thresholds.", UserWarning)
+            logger.warning("No bars were generated. Check your data format and thresholds.")
             return pd.DataFrame()
             
         # Convert to DataFrame
-        bars_df = pd.DataFrame(list_bars)
+        try:
+            bars_df = pd.DataFrame(list_bars)
+            
+            # Add metadata
+            bars_df.attrs['metric'] = self.metric
+            bars_df.attrs['creation_time'] = self.creation_time
+            bars_df.attrs['total_batches'] = batch_count
+            bars_df.attrs['processing_errors'] = self.processing_errors
+            bars_df.attrs['total_ticks_processed'] = self.total_ticks_processed
+            
+        except Exception as e:
+            logger.error(f"Error creating DataFrame from bars: {e}")
+            raise
+        
+        # Output handling
+        total_duration = datetime.now() - start_time
         
         if to_csv:
-            bars_df.to_csv(output_path, index=False)
-            if verbose:
-                print(f'Bars saved to {output_path}')
+            try:
+                bars_df.to_csv(output_path, index=False)
+                logger.info(f'Bars saved to {output_path}')
+            except Exception as e:
+                logger.error(f"Error saving bars to CSV: {e}")
+                raise
+            
+            logger.info(f'Processing complete: {len(bars_df)} bars generated in {total_duration.total_seconds():.2f}s')
             return None
         else:
-            if verbose:
-                print(f'Generated {len(bars_df)} total bars')
+            logger.info(f'Processing complete: {len(bars_df)} bars generated in {total_duration.total_seconds():.2f}s')
+            if self.processing_errors > 0:
+                logger.warning(f"Processing completed with {self.processing_errors} errors")
             return bars_df
 
     def _batch_iterator(self, file_path_or_df: Union[str, Iterable[str], pd.DataFrame]) -> Generator[pd.DataFrame, None, None]:
@@ -255,6 +344,7 @@ class BaseBars(ABC):
         """
         Create a bar dictionary with OHLC data and microstructural statistics
         Following López de Prado's recommendations for comprehensive bar information
+        Enhanced with additional metadata and validation
         
         :param date_time: Bar timestamp
         :param price: (float) Close price
@@ -262,7 +352,25 @@ class BaseBars(ABC):
         :param low_price: (float) Low price  
         :param open_price: (float) Open price
         :return: (dict) Bar data with microstructural features
+        :raises ValueError: If price data is invalid
         """
+        
+        # Validate inputs
+        if not all(isinstance(p, (int, float, np.integer, np.floating)) for p in [price, high_price, low_price, open_price]):
+            raise ValueError("All price values must be numeric")
+            
+        if not all(p > 0 for p in [price, high_price, low_price, open_price]):
+            raise ValueError("All price values must be positive")
+            
+        if low_price > high_price:
+            logger.warning(f"Low price ({low_price}) > High price ({high_price}). Swapping values.")
+            low_price, high_price = high_price, low_price
+            
+        if not (low_price <= open_price <= high_price):
+            logger.warning(f"Open price ({open_price}) outside high-low range [{low_price}, {high_price}]")
+            
+        if not (low_price <= price <= high_price):
+            logger.warning(f"Close price ({price}) outside high-low range [{low_price}, {high_price}]")
         
         # Calculate VWAP if we have volume data
         vwap = (self.cum_statistics['cum_dollar_value'] / 
@@ -273,13 +381,28 @@ class BaseBars(ABC):
                          self.cum_statistics['cum_volume']) if self.cum_statistics['cum_volume'] > 0 else 0.5
         
         # Calculate realized volatility (high-low estimator)
-        realized_vol = np.log(high_price / low_price) if low_price > 0 and high_price > 0 else 0
+        try:
+            realized_vol = np.log(high_price / low_price) if low_price > 0 and high_price > 0 else 0
+        except (ValueError, ZeroDivisionError):
+            logger.warning("Could not calculate realized volatility, setting to 0")
+            realized_vol = 0
         
         # Price change information
         price_change = price - open_price
         price_change_pct = (price_change / open_price) if open_price > 0 else 0
         
-        return {
+        # Additional microstructural features
+        tick_size = (high_price - low_price) / self.cum_statistics['cum_ticks'] if self.cum_statistics['cum_ticks'] > 0 else 0
+        
+        # Dollar volume per tick
+        dollar_per_tick = (self.cum_statistics['cum_dollar_value'] / 
+                          self.cum_statistics['cum_ticks']) if self.cum_statistics['cum_ticks'] > 0 else 0
+        
+        # Volume per tick
+        volume_per_tick = (self.cum_statistics['cum_volume'] / 
+                          self.cum_statistics['cum_ticks']) if self.cum_statistics['cum_ticks'] > 0 else 0
+        
+        bar_data = {
             'date_time': date_time,
             'open': open_price,
             'high': high_price,
@@ -293,8 +416,19 @@ class BaseBars(ABC):
             'dollar_volume': self.cum_statistics['cum_dollar_value'],
             'realized_volatility': realized_vol,
             'price_change': price_change,
-            'price_change_pct': price_change_pct
+            'price_change_pct': price_change_pct,
+            'tick_size': tick_size,
+            'dollar_per_tick': dollar_per_tick,
+            'volume_per_tick': volume_per_tick,
+            'warm_up_complete': self.is_warm_up_complete,
+            'bar_method': self.metric
         }
+        
+        # Log bar creation (debug level)
+        logger.debug(f"Created bar: {bar_data['date_time']}, Close: {price:.4f}, "
+                    f"Volume: {self.cum_statistics['cum_volume']}, Ticks: {self.cum_statistics['cum_ticks']}")
+        
+        return bar_data
 
     @abstractmethod
     def _reset_cache(self):
@@ -308,19 +442,67 @@ class BaseBars(ABC):
     def _assert_csv(test_batch: pd.DataFrame):
         """
         Tests that the csv file read has the format: date_time, price, and volume.
-        If not then the user needs to create such a file. This format is in place to remove any unwanted overhead.
+        Enhanced validation with better error messages and type checking.
 
         :param test_batch: (pd.DataFrame) The first row of the dataset.
+        :raises ValueError: If data format is incorrect
         """
-        assert test_batch.shape[1] == 3, 'Must have only 3 columns in csv: date_time, price, & volume.'
-        assert isinstance(test_batch.iloc[0, 1], float), 'price column in csv not float.'
-        assert not isinstance(test_batch.iloc[0, 2], str), 'volume column in csv not int or float.'
-
+        if test_batch.empty:
+            raise ValueError("Input DataFrame is empty")
+        
+        if test_batch.shape[1] != 3:
+            raise ValueError(f'Must have exactly 3 columns in csv: date_time, price, & volume. '
+                           f'Got {test_batch.shape[1]} columns: {list(test_batch.columns)}')
+        
+        # Expected column names (flexible matching)
+        expected_columns = ['date_time', 'price', 'volume']
+        actual_columns = list(test_batch.columns)
+        
+        # Check if column names match expected pattern
+        if not all(any(expected in str(col).lower() for expected in ['date', 'time']) for col in [actual_columns[0]]):
+            raise ValueError(f'First column should contain date/time information. Got: {actual_columns[0]}')
+        
+        if not any(keyword in str(actual_columns[1]).lower() for keyword in ['price', 'close', 'value']):
+            raise ValueError(f'Second column should contain price information. Got: {actual_columns[1]}')
+            
+        if not any(keyword in str(actual_columns[2]).lower() for keyword in ['volume', 'vol', 'size']):
+            raise ValueError(f'Third column should contain volume information. Got: {actual_columns[2]}')
+        
+        # Type validation with better error messages
         try:
-            pd.to_datetime(test_batch.iloc[0, 0])
-        except ValueError:
-            raise ValueError('csv file, column 0, not a date time format:',
-                             test_batch.iloc[0, 0])
+            price_value = test_batch.iloc[0, 1]
+            if pd.isna(price_value):
+                raise ValueError('First price value is NaN')
+            if not isinstance(price_value, (int, float, np.integer, np.floating)):
+                raise ValueError(f'Price column must be numeric. Got type: {type(price_value)}')
+            if price_value <= 0:
+                raise ValueError(f'Price must be positive. Got: {price_value}')
+        except (IndexError, TypeError) as e:
+            raise ValueError(f'Error validating price column: {e}')
+        
+        try:
+            volume_value = test_batch.iloc[0, 2]
+            if pd.isna(volume_value):
+                raise ValueError('First volume value is NaN')
+            if not isinstance(volume_value, (int, float, np.integer, np.floating)):
+                raise ValueError(f'Volume column must be numeric. Got type: {type(volume_value)}')
+            if volume_value < 0:
+                raise ValueError(f'Volume cannot be negative. Got: {volume_value}')
+        except (IndexError, TypeError) as e:
+            raise ValueError(f'Error validating volume column: {e}')
+
+        # DateTime validation with better error handling
+        try:
+            datetime_value = test_batch.iloc[0, 0]
+            if pd.isna(datetime_value):
+                raise ValueError('First datetime value is NaN')
+            parsed_datetime = pd.to_datetime(datetime_value)
+            if pd.isna(parsed_datetime):
+                raise ValueError('Datetime could not be parsed')
+        except (ValueError, TypeError) as e:
+            raise ValueError(f'DateTime validation failed for value "{test_batch.iloc[0, 0]}": {e}')
+        except Exception as e:
+            raise ValueError(f'Unexpected error in datetime validation: {e}')
 
     def _apply_tick_rule(self, price: float) -> int:
         """
@@ -364,32 +546,99 @@ class BaseBars(ABC):
     def _validate_data_quality(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Validate and clean data quality following López de Prado's recommendations
+        Enhanced with comprehensive logging and statistics
         
         :param data: (pd.DataFrame) Raw tick data
         :return: (pd.DataFrame) Cleaned data
+        :raises ValueError: If data becomes empty after cleaning
         """
+        if data.empty:
+            logger.warning("Input data is empty")
+            return data
+            
         initial_count = len(data)
+        logger.debug(f"Starting data validation with {initial_count} rows")
+        
+        # Track cleaning statistics
+        cleaning_stats = {
+            'initial_count': initial_count,
+            'missing_data_removed': 0,
+            'zero_price_removed': 0,
+            'negative_price_removed': 0,
+            'zero_volume_removed': 0,
+            'negative_volume_removed': 0,
+            'outliers_removed': 0
+        }
         
         # Remove rows with missing critical data
+        before_na = len(data)
         data = data.dropna(subset=['price', 'volume'])
+        cleaning_stats['missing_data_removed'] = before_na - len(data)
         
-        # Remove zero or negative prices
+        if cleaning_stats['missing_data_removed'] > 0:
+            logger.debug(f"Removed {cleaning_stats['missing_data_removed']} rows with missing price/volume data")
+        
+        # Remove zero prices
+        before_zero_price = len(data)
         data = data[data['price'] > 0]
+        cleaning_stats['zero_price_removed'] = before_zero_price - len(data)
         
-        # Remove zero volume trades (optional, depends on data source)
-        # data = data[data['volume'] > 0]  # Uncomment if needed
+        if cleaning_stats['zero_price_removed'] > 0:
+            logger.debug(f"Removed {cleaning_stats['zero_price_removed']} rows with zero prices")
         
-        # Remove extreme outliers (> 10 standard deviations)
-        price_mean = data['price'].mean()
-        price_std = data['price'].std()
-        if price_std > 0:
-            price_outlier_mask = (np.abs(data['price'] - price_mean) < 10 * price_std)
-            data = data[price_outlier_mask]
+        # Remove negative prices (additional check)
+        before_neg_price = len(data)  
+        data = data[data['price'] > 0]  # This also catches negative prices
+        cleaning_stats['negative_price_removed'] = before_neg_price - len(data)
+        
+        # Handle volume validation (be more flexible with zero volume)
+        if 'volume' in data.columns:
+            before_neg_volume = len(data)
+            data = data[data['volume'] >= 0]  # Allow zero volume but not negative
+            cleaning_stats['negative_volume_removed'] = before_neg_volume - len(data)
+            
+            if cleaning_stats['negative_volume_removed'] > 0:
+                logger.debug(f"Removed {cleaning_stats['negative_volume_removed']} rows with negative volume")
+        
+        # Remove extreme outliers (> 10 standard deviations) - More robust approach
+        if len(data) > 10:  # Only apply if we have enough data
+            try:
+                # Use robust statistics (median and MAD instead of mean and std)
+                price_median = data['price'].median()
+                price_mad = data['price'].mad()  # Median Absolute Deviation
+                
+                if price_mad > 0:
+                    # Use 10 MAD as threshold (more robust than 10 std)
+                    threshold = 10 * price_mad
+                    before_outliers = len(data)
+                    price_outlier_mask = (np.abs(data['price'] - price_median) < threshold)
+                    data = data[price_outlier_mask]
+                    cleaning_stats['outliers_removed'] = before_outliers - len(data)
+                    
+                    if cleaning_stats['outliers_removed'] > 0:
+                        logger.debug(f"Removed {cleaning_stats['outliers_removed']} price outliers using MAD method")
+            except Exception as e:
+                logger.warning(f"Could not apply outlier detection: {e}")
         
         cleaned_count = len(data)
-        if initial_count > cleaned_count:
-            warnings.warn(f"Data cleaning removed {initial_count - cleaned_count} rows "
-                         f"({(initial_count - cleaned_count)/initial_count*100:.2f}%)")
+        total_removed = initial_count - cleaned_count
+        
+        if total_removed > 0:
+            removal_pct = (total_removed / initial_count) * 100
+            logger.info(f"Data cleaning removed {total_removed} rows ({removal_pct:.2f}%)")
+            
+            # Log detailed statistics
+            logger.debug(f"Cleaning breakdown: {cleaning_stats}")
+            
+            # Warning for excessive data loss
+            if removal_pct > 10:
+                logger.warning(f"High data loss during cleaning: {removal_pct:.2f}%. "
+                             "Consider reviewing data quality and cleaning parameters.")
+        
+        # Final validation
+        if cleaned_count == 0:
+            logger.error("All data removed during cleaning process")
+            raise ValueError("No valid data remaining after quality validation")
         
         return data.reset_index(drop=True)
     
@@ -405,6 +654,62 @@ class BaseBars(ABC):
                 warnings.warn(f"Warm-up period complete after {self.warm_up_period} bars. "
                              "Statistical properties should now be stable.")
 
+    def get_processing_statistics(self) -> dict:
+        """
+        Get comprehensive processing statistics for auditing and monitoring
+        
+        :return: (dict) Processing statistics and metadata
+        """
+        stats = {
+            'metric': self.metric,
+            'creation_time': self.creation_time,
+            'batch_size': self.batch_size,
+            'total_bars_generated': self.total_bars_generated,
+            'total_ticks_processed': self.total_ticks_processed,
+            'processing_errors': self.processing_errors,
+            'warm_up_period': self.warm_up_period,
+            'is_warm_up_complete': self.is_warm_up_complete,
+            'last_tick_direction': self.last_tick_direction,
+            'current_cum_statistics': self.cum_statistics.copy()
+        }
+        
+        # Calculate derived statistics
+        if self.total_ticks_processed > 0:
+            stats['ticks_per_bar'] = self.total_ticks_processed / max(self.total_bars_generated, 1)
+            stats['error_rate'] = self.processing_errors / self.total_ticks_processed
+        else:
+            stats['ticks_per_bar'] = 0
+            stats['error_rate'] = 0
+            
+        logger.info(f"Processing statistics: {stats}")
+        return stats
+    
+    def reset_statistics(self):
+        """
+        Reset processing statistics (useful for batch processing)
+        """
+        logger.info("Resetting processing statistics")
+        self.total_bars_generated = 0
+        self.total_ticks_processed = 0
+        self.processing_errors = 0
+        self.is_warm_up_complete = False
+        self._reset_cache()
+        
+    def export_configuration(self) -> dict:
+        """
+        Export current configuration for reproducibility
+        
+        :return: (dict) Configuration parameters
+        """
+        config = {
+            'metric': self.metric,
+            'batch_size': self.batch_size,
+            'warm_up_period': self.warm_up_period,
+            'creation_time': self.creation_time.isoformat(),
+            'class_name': self.__class__.__name__
+        }
+        
+        return config
 
 class BaseImbalanceBars(BaseBars):
     """
