@@ -1,0 +1,16 @@
+{
+  "module_name": "test_base_bars",
+  "test_date": "2025-07-06 01:29:06",
+  "tests_run": 6,
+  "tests_passed": 6,
+  "tests_failed": 0,
+  "success_rate": 100.0,
+  "plots_generated": 3,
+  "html_report": "./test_results_base_bars/test_report.html",
+  "json_report": "./test_results_base_bars/test_report.json",
+  "plots": [
+    "./test_results_base_bars/price_comparison.png",
+    "./test_results_base_bars/volume_analysis.png",
+    "./test_results_base_bars/performance_analysis.png"
+  ]
+}

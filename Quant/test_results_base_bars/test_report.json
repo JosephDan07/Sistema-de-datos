@@ -1,0 +1,130 @@
+{
+  "test_date": "2025-07-06 01:29:06",
+  "tests_run": 6,
+  "tests_passed": 6,
+  "tests_failed": 0,
+  "performance_metrics": {
+    "1000": {
+      "time": {
+        "execution_time": 0.00830698013305664,
+        "bars_generated": 0,
+        "throughput": 120380.68997187303,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "tick": {
+        "execution_time": 0.00024819374084472656,
+        "bars_generated": 0,
+        "throughput": 4029110.470701249,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "volume": {
+        "execution_time": 0.00025653839111328125,
+        "bars_generated": 0,
+        "throughput": 3898052.0446096654,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "dollar": {
+        "execution_time": 0.00022292137145996094,
+        "bars_generated": 0,
+        "throughput": 4485886.631016043,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      }
+    },
+    "10000": {
+      "time": {
+        "execution_time": 0.0002562999725341797,
+        "bars_generated": 0,
+        "throughput": 39016781.39534884,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "tick": {
+        "execution_time": 0.00022077560424804688,
+        "bars_generated": 0,
+        "throughput": 45294859.6112311,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "volume": {
+        "execution_time": 0.0002522468566894531,
+        "bars_generated": 0,
+        "throughput": 39643705.10396975,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "dollar": {
+        "execution_time": 0.0002791881561279297,
+        "bars_generated": 0,
+        "throughput": 35818138.34329633,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      }
+    },
+    "50000": {
+      "time": {
+        "execution_time": 0.00033211708068847656,
+        "bars_generated": 0,
+        "throughput": 150549318.01866475,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "tick": {
+        "execution_time": 0.0002970695495605469,
+        "bars_generated": 0,
+        "throughput": 168310754.4141252,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "volume": {
+        "execution_time": 0.00027751922607421875,
+        "bars_generated": 0,
+        "throughput": 180167697.5945017,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      },
+      "dollar": {
+        "execution_time": 0.0002529621124267578,
+        "bars_generated": 0,
+        "throughput": 197658058.43543828,
+        "memory_used_mb": 0.0,
+        "bars_per_second": 0.0
+      }
+    }
+  },
+  "statistical_analysis": {},
+  "plots_generated": [
+    "./test_results_base_bars/price_comparison.png",
+    "./test_results_base_bars/volume_analysis.png",
+    "./test_results_base_bars/performance_analysis.png"
+  ],
+  "errors": [],
+  "warnings": [],
+  "stress_tests": {
+    "extreme_volatility": {
+      "passed": true,
+      "bars_generated": 0,
+      "processing_time": 0.0001780986785888672,
+      "data_size": 5000,
+      "message": "Successfully handled extreme volatility"
+    },
+    "large_dataset": {
+      "passed": true,
+      "bars_generated": 0,
+      "processing_time": 0.0002453327178955078,
+      "data_size": 50000,
+      "throughput": 203804859.08649173,
+      "message": "Successfully processed 50000 samples"
+    },
+    "edge_cases": {
+      "passed": true,
+      "identical_prices_bars": 0,
+      "monotonic_prices_bars": 0,
+      "message": "Successfully handled edge cases"
+    }
+  },
+  "interactive_dashboard": "./test_results_base_bars/interactive_dashboard.html"
+}
