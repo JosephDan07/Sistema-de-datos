@@ -1,0 +1,191 @@
+# ================================================================================
+# CONFIGURACIÓN ESPECÍFICA - DATA STRUCTURES MODULE
+# Configuración avanzada para testing de estructuras de datos financieras
+# ================================================================================
+
+module:
+  name: "data_structures"
+  description: "Testing avanzado para estructuras de datos financieras"
+  version: "2.0.0"
+  priority: 1
+
+# CONFIGURACIONES ESPECÍFICAS DE TESTING
+testing:
+  # Override de configuraciones globales para este módulo
+  performance:
+    data_sizes: [1000, 5000, 10000, 25000, 50000, 100000]  # Más tamaños para data structures
+    memory_monitoring: true
+    profiling_enabled: true
+    benchmark_iterations: 5  # Más iteraciones para mayor precisión
+    timeout_seconds: 600  # Más tiempo para datasets grandes
+    
+  # Configuraciones específicas para barras
+  bars:
+    time_frequencies: ["1Min", "5Min", "15Min", "1H", "1D"]
+    tick_thresholds: [50, 100, 500, 1000, 2000, 5000]
+    volume_thresholds: [1000, 5000, 10000, 25000, 50000, 100000]
+    dollar_thresholds: [50000, 100000, 250000, 500000, 1000000, 2500000]
+    
+  # Configuraciones para imbalance bars
+  imbalance:
+    expected_imbalance_window: 100
+    imbalance_thresholds: [0.1, 0.2, 0.3, 0.5]
+    
+  # Configuraciones para run bars
+  runs:
+    expected_runs_window: 100
+    run_thresholds: [10, 20, 50, 100]
+    
+  # Datos sintéticos específicos para estructuras de datos
+  synthetic_data:
+    price_start: 100.0
+    volatility: 0.02
+    trend: 0.0001
+    tick_size: 0.01
+    spread_bps: 1.0  # 1 basis point
+    microstructure_noise: true
+    
+  # Edge cases específicos
+  edge_cases:
+    test_empty_data: true
+    test_single_row: true
+    test_missing_columns: true
+    test_nan_values: true
+    test_negative_prices: true
+    test_zero_volume: true
+    test_identical_prices: true
+    test_extreme_outliers: true
+
+# CONFIGURACIONES DE VALIDACIÓN ESPECÍFICAS
+validation:
+  # Validaciones estrictas para barras
+  bars_validation:
+    check_ohlc_consistency: true
+    check_volume_positive: true
+    check_monotonic_time: true
+    check_realistic_prices: true
+    max_price_change_pct: 0.2  # 20% máximo cambio por barra
+    
+  # Validaciones de performance
+  performance_validation:
+    max_execution_time_seconds: 60
+    max_memory_usage_mb: 2048
+    min_throughput_samples_per_second: 1000
+    
+# CONFIGURACIONES DE OPTIMIZACIÓN
+optimization:
+  # Numba específico para data structures
+  numba:
+    enabled: true
+    cache: true
+    parallel: true
+    fastmath: true
+    target_functions:
+      - "_extract_bars"
+      - "_update_counters"
+      - "_apply_tick_rule"
+      
+  # Pandas optimizations
+  pandas:
+    use_categorical: true
+    optimize_dtypes: true
+    chunk_size: 50000
+    
+  # Memory optimizations
+  memory:
+    use_generators: true
+    batch_processing: true
+    gc_frequency: 50
+    
+# CONFIGURACIONES DE OUTPUT ESPECÍFICAS
+output:
+  plots:
+    # Gráficos específicos para data structures
+    generate_bar_comparison: true
+    generate_volume_analysis: true
+    generate_price_distribution: true
+    generate_microstructure_analysis: true
+    generate_performance_heatmap: true
+    
+  metrics:
+    # Métricas específicas a calcular
+    calculate_bar_statistics: true
+    calculate_sampling_efficiency: true
+    calculate_information_content: true
+    calculate_microstructure_metrics: true
+    
+  reports:
+    include_bar_comparison_table: true
+    include_performance_breakdown: true
+    include_memory_analysis: true
+    include_recommendations: true
+
+# TESTS ESPECÍFICOS DEL MÓDULO
+tests:
+  base_bars:
+    enabled: true
+    priority: 1
+    focus_areas:
+      - "OHLC consistency"
+      - "Volume aggregation"
+      - "Time series properties"
+      - "Performance scaling"
+    
+  imbalance_bars:
+    enabled: true
+    priority: 2
+    focus_areas:
+      - "Imbalance calculation accuracy"
+      - "Expected value tracking"
+      - "Microstructure noise handling"
+      
+  run_bars:
+    enabled: true
+    priority: 3
+    focus_areas:
+      - "Run identification"
+      - "Sequential dependency"
+      - "Statistical properties"
+      
+  standard_data_structures:
+    enabled: true
+    priority: 4
+    focus_areas:
+      - "Standard bar types"
+      - "Compatibility testing"
+      - "Integration validation"
+      
+  time_data_structures:
+    enabled: true
+    priority: 5
+    focus_areas:
+      - "Time-based sampling"
+      - "Calendar effects"
+      - "Missing data handling"
+
+# CONFIGURACIONES DE BENCHMARK
+benchmarks:
+  # Comparaciones con implementaciones de referencia
+  reference_implementations:
+    compare_with_pandas_resample: true
+    compare_with_simple_groupby: true
+    
+  # Métricas de benchmark
+  metrics:
+    - "execution_time"
+    - "memory_usage"
+    - "cpu_utilization"
+    - "cache_efficiency"
+    
+# CONFIGURACIONES DE ALERTAS
+alerts:
+  performance_degradation_threshold: 0.2  # 20% degradación
+  memory_usage_threshold: 0.8  # 80% del límite
+  error_rate_threshold: 0.05  # 5% tasa de error
+  
+# CONFIGURACIONES DE DESARROLLO
+development:
+  debug_bar_generation: false
+  save_intermediate_bars: false
+  profile_critical_functions: true
+  generate_performance_flamegraph: false

@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-07-06T04:46:13.245814",
+  "execution_time": 0.6008942127227783,
+  "total_tests": 4,
+  "successful_tests": 0,
+  "failed_tests": 4,
+  "parallel_execution": true,
+  "timeout": 300,
+  "results": {
+    "labeling": {
+      "success": false,
+      "message": "Failed with code 1",
+      "execution_time": 0.5568981170654297,
+      "output": "",
+      "error": "Traceback (most recent call last):\n  File \"/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_labeling/test_complete_labeling.py\", line 21, in <module>\n    from test_config_manager import TestConfigManager\nImportError: cannot import name 'TestConfigManager' from 'test_config_manager' (/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_config_manager.py). Did you mean: 'get_config_manager'?\n",
+      "return_code": 1
+    },
+    "data_structures": {
+      "success": false,
+      "message": "Failed with code 1",
+      "execution_time": 0.575404167175293,
+      "output": "",
+      "error": "Traceback (most recent call last):\n  File \"/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_data_structures/test_complete_data_structures.py\", line 21, in <module>\n    from test_config_manager import TestConfigManager\nImportError: cannot import name 'TestConfigManager' from 'test_config_manager' (/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_config_manager.py). Did you mean: 'get_config_manager'?\n",
+      "return_code": 1
+    },
+    "multi_product": {
+      "success": false,
+      "message": "Failed with code 1",
+      "execution_time": 0.5960474014282227,
+      "output": "",
+      "error": "Traceback (most recent call last):\n  File \"/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_multi_product/test_complete_multi_product.py\", line 21, in <module>\n    from test_config_manager import TestConfigManager\nImportError: cannot import name 'TestConfigManager' from 'test_config_manager' (/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_config_manager.py). Did you mean: 'get_config_manager'?\n",
+      "return_code": 1
+    },
+    "util": {
+      "success": false,
+      "message": "Failed with code 1",
+      "execution_time": 0.5999188423156738,
+      "output": "",
+      "error": "Traceback (most recent call last):\n  File \"/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_util/test_complete_util.py\", line 23, in <module>\n    from test_config_manager import TestConfigManager\nImportError: cannot import name 'TestConfigManager' from 'test_config_manager' (/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_config_manager.py). Did you mean: 'get_config_manager'?\n",
+      "return_code": 1
+    }
+  }
+}

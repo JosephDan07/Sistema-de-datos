@@ -24,6 +24,11 @@ from typing import Dict, List, Tuple, Optional, Any
 import logging
 from datetime import datetime, timedelta
 import json
+from pathlib import Path
+
+# Import configuration system
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from test_config_manager import get_config, get_output_path
 
 # Core libraries
 import numpy as np
@@ -165,24 +170,19 @@ class TestBaseBarsAdvanced:
         
     def load_config(self, config_path: str = None):
         """
-        Load configuration from JSON file
+        Load configuration using the hybrid configuration system
+        This method is kept for backward compatibility but now uses the ConfigurationManager
         
-        :param config_path: Path to configuration file
+        :param config_path: Path to configuration file (ignored, using hybrid system)
+        :return: Configuration dictionary
         """
-        if config_path is None:
-            config_path = os.path.join(os.path.dirname(__file__), "test_config.json")
+        # Use the already loaded configuration from __init__
+        if hasattr(self, 'config') and self.config:
+            return self.config
         
-        try:
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-                logger.info(f"✅ Configuration loaded from {config_path}")
-                return config
-        except FileNotFoundError:
-            logger.warning(f"⚠️ Configuration file not found: {config_path}")
-            return self._get_default_config()
-        except json.JSONDecodeError as e:
-            logger.error(f"❌ Error parsing configuration file: {e}")
-            return self._get_default_config()
+        # Fallback to loading if not already loaded
+        self.config = get_config('data_structures', 'test_base_bars')
+        return self.config
     
     def _get_default_config(self):
         """Get default configuration"""
@@ -201,31 +201,49 @@ class TestBaseBarsAdvanced:
             }
         }
     
-    def generate_synthetic_data(self, n_samples: int = 10000, 
-                               price_start: float = 100.0,
-                               volatility: float = 0.02,
-                               trend: float = 0.0001,
-                               include_gaps: bool = True,
-                               include_outliers: bool = True) -> pd.DataFrame:
+    def generate_synthetic_data(self, n_samples: int = None, 
+                               price_start: float = None,
+                               volatility: float = None,
+                               trend: float = None,
+                               include_gaps: bool = None,
+                               include_outliers: bool = None) -> pd.DataFrame:
         """
-        Generate synthetic financial data for testing
+        Generate synthetic financial data for testing using hybrid configuration
         
-        :param n_samples: Number of data points
-        :param price_start: Starting price
-        :param volatility: Daily volatility
-        :param trend: Price trend
-        :param include_gaps: Whether to include price gaps
-        :param include_outliers: Whether to include outliers
+        :param n_samples: Number of data points (from config if None)
+        :param price_start: Starting price (from config if None)
+        :param volatility: Daily volatility (from config if None)
+        :param trend: Price trend (from config if None)
+        :param include_gaps: Whether to include price gaps (from config if None)
+        :param include_outliers: Whether to include outliers (from config if None)
         :return: Synthetic market data DataFrame
         """
-        logger.info(f"📊 Generating synthetic data: {n_samples} samples")
+        # Get parameters from configuration if not provided
+        synth_config = self.config.get('global_settings', {}).get('synthetic_data', {})
+        module_synth_config = self.config.get('module_settings', {}).get('synthetic_data', {})
+        
+        # Merge configs with module taking precedence
+        effective_synth_config = {**synth_config, **module_synth_config}
+        
+        # Use provided values or fall back to config
+        n_samples = n_samples if n_samples is not None else effective_synth_config.get('default_samples', 10000)
+        price_start = price_start if price_start is not None else effective_synth_config.get('price_start', 100.0)
+        volatility = volatility if volatility is not None else effective_synth_config.get('volatility', 0.02)
+        trend = trend if trend is not None else effective_synth_config.get('trend', 0.0001)
+        include_gaps = include_gaps if include_gaps is not None else effective_synth_config.get('include_gaps', True)
+        include_outliers = include_outliers if include_outliers is not None else effective_synth_config.get('include_outliers', True)
+        
+        logger.info(f"📊 Generating synthetic data: {n_samples} samples using hybrid config")
+        
+        # Set random seed for reproducibility
+        random_seed = effective_synth_config.get('random_seed', 42)
+        np.random.seed(random_seed)
         
         # Generate timestamps
         start_time = datetime.now() - timedelta(days=max(1, n_samples//1000))
         timestamps = pd.date_range(start=start_time, periods=n_samples, freq='1S')
         
         # Generate price series with geometric brownian motion
-        np.random.seed(42)  # For reproducibility
         returns = np.random.normal(trend, volatility, n_samples)
         
         # Apply autocorrelation to make it more realistic
@@ -234,8 +252,16 @@ class TestBaseBarsAdvanced:
         
         prices = np.exp(np.cumsum(returns)) * price_start
         
-        # Generate volumes (log-normal distribution)
-        volumes = np.random.lognormal(mean=8, sigma=1, size=n_samples)
+        # Generate volumes using config parameters
+        tick_config = effective_synth_config.get('tick_data', {})
+        volume_mean = tick_config.get('volume_mean', 1000)
+        volume_std = tick_config.get('volume_std', 500)
+        
+        if tick_config.get('volume_distribution', 'lognormal') == 'lognormal':
+            volumes = np.random.lognormal(mean=np.log(volume_mean), sigma=volume_std/volume_mean, size=n_samples)
+        else:
+            volumes = np.random.normal(volume_mean, volume_std, n_samples)
+            volumes = np.maximum(volumes, 1)  # Ensure positive volumes
         
         # Generate dollar amounts
         dollar_amounts = prices * volumes
@@ -260,14 +286,23 @@ class TestBaseBarsAdvanced:
             'dollar_amount': dollar_amounts
         })
         
-        # Add some realistic market microstructure
-        data['bid'] = data['price'] * 0.9999
-        data['ask'] = data['price'] * 1.0001
+        # Add microstructure features if configured
+        microstructure_config = effective_synth_config.get('microstructure', {})
+        if microstructure_config.get('bid_ask_spread'):
+            spread = microstructure_config['bid_ask_spread']
+            data['bid'] = data['price'] * (1 - spread/2)
+            data['ask'] = data['price'] * (1 + spread/2)
+        else:
+            # Default microstructure
+            data['bid'] = data['price'] * 0.9999
+            data['ask'] = data['price'] * 1.0001
+        
         data['tick_rule'] = np.random.choice([1, -1], size=n_samples)
         
         logger.info(f"✅ Generated synthetic data with {len(data)} rows")
         logger.info(f"📈 Price range: ${data['price'].min():.2f} - ${data['price'].max():.2f}")
         logger.info(f"📊 Volume range: {data['volume'].min():.0f} - {data['volume'].max():.0f}")
+        logger.debug(f"Configuration used: {effective_synth_config}")
         
         return data
     
@@ -281,14 +316,12 @@ class TestBaseBarsAdvanced:
         start_time = time.time()
         
         try:
-            # Load configuration
-            config = self.load_config()
+            # Load configuration (already loaded in __init__)
+            config = self.config
             
-            # Generate test data
+            # Generate test data using hybrid configuration
             logger.info("📊 Generating test data...")
-            self.test_data = self.generate_synthetic_data(
-                n_samples=config["testing_parameters"]["synthetic_data"]["default_samples"]
-            )
+            self.test_data = self.generate_synthetic_data()
             
             # Run test categories
             logger.info("🧪 Running unit tests...")
@@ -534,12 +567,18 @@ class TestBaseBarsAdvanced:
             raise
     
     def _run_performance_tests(self):
-        """Run comprehensive performance benchmarks"""
+        """Run comprehensive performance benchmarks using hybrid configuration"""
         logger.info("⚡ Starting performance benchmarks")
         
-        config = self.load_config()
-        data_sizes = config["testing_parameters"]["performance_testing"]["data_sizes"]
-        bar_types = config["testing_parameters"]["performance_testing"]["bar_types"]
+        # Get configuration for performance testing
+        perf_config = self.config.get('global_settings', {}).get('performance_testing', {})
+        module_perf_config = self.config.get('module_settings', {}).get('performance_testing', {})
+        
+        # Merge configs with module taking precedence
+        effective_perf_config = {**perf_config, **module_perf_config}
+        
+        data_sizes = effective_perf_config.get('data_sizes', [1000, 5000, 10000])
+        bar_types = self.config.get('module_settings', {}).get('bar_types', ["time", "tick", "volume", "dollar"])
         
         performance_results = {}
         

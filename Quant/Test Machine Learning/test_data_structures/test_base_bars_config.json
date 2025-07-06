@@ -1,0 +1,79 @@
+{
+  "test_specific_settings": {
+    "description": "Specific configuration for test_base_bars.py",
+    "test_name": "test_base_bars",
+    "module": "data_structures"
+  },
+  
+  "synthetic_data": {
+    "default_samples": 50000,
+    "price_start": 100.0,
+    "volatility": 0.015,
+    "trend": 0.0001,
+    "include_gaps": true,
+    "include_outliers": true,
+    "random_seed": 42
+  },
+  
+  "bar_testing": {
+    "time_bars": {
+      "test_frequencies": ["1Min", "5Min", "15Min", "1H"]
+    },
+    "tick_bars": {
+      "test_thresholds": [100, 500, 1000, 2000]
+    },
+    "volume_bars": {
+      "test_thresholds": [5000, 10000, 25000, 50000]
+    },
+    "dollar_bars": {
+      "test_thresholds": [100000, 250000, 500000, 1000000]
+    }
+  },
+  
+  "performance_testing": {
+    "enabled": true,
+    "data_sizes": [1000, 5000, 10000, 25000],
+    "iterations": 3,
+    "memory_profiling": true,
+    "stress_testing": {
+      "enabled": true,
+      "extreme_volatility": 0.5,
+      "large_dataset_size": 50000
+    }
+  },
+  
+  "statistical_analysis": {
+    "enabled": true,
+    "tests": {
+      "normality_tests": true,
+      "stationarity_tests": true,
+      "autocorrelation_tests": true
+    }
+  },
+  
+  "visualization": {
+    "generate_plots": true,
+    "plot_types": [
+      "price_comparison",
+      "volume_analysis", 
+      "performance_analysis",
+      "statistical_analysis"
+    ],
+    "interactive_dashboard": true
+  },
+  
+  "quality_assurance": {
+    "ohlc_validation": true,
+    "bar_consistency_checks": true,
+    "data_integrity_checks": true,
+    "max_error_percentage": 5.0
+  },
+  
+  "output": {
+    "save_raw_data": false,
+    "save_plots": true,
+    "save_reports": true,
+    "formats": ["json", "html"],
+    "compression": false
+  }
+}

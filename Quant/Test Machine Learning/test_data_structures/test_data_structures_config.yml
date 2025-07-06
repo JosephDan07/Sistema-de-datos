@@ -1,0 +1,183 @@
+# Data Structures Module Test Configuration
+# ========================================
+# Specific configuration for testing data_structures module
+# This extends and overrides the global configuration
+
+# Module-specific settings
+module_settings:
+  # Bar types to test
+  bar_types: ["time", "tick", "volume", "dollar", "imbalance"]
+  
+  # Time-based bars configuration
+  time_bars:
+    frequencies: ["1Min", "5Min", "15Min", "30Min", "1H", "1D"]
+    test_frequencies: ["1Min", "5Min", "15Min"]  # For performance testing
+    
+  # Tick-based bars configuration  
+  tick_bars:
+    thresholds: [50, 100, 200, 500, 1000, 2000, 5000]
+    test_thresholds: [100, 500, 1000]  # For performance testing
+    
+  # Volume-based bars configuration
+  volume_bars:
+    thresholds: [1000, 5000, 10000, 25000, 50000, 100000]
+    test_thresholds: [5000, 10000, 25000]  # For performance testing
+    
+  # Dollar-based bars configuration
+  dollar_bars:
+    thresholds: [50000, 100000, 250000, 500000, 1000000, 2000000]
+    test_thresholds: [100000, 250000, 500000]  # For performance testing
+    
+  # Imbalance bars configuration
+  imbalance_bars:
+    initial_ewma_window: 100
+    expected_imbalance_window: 10000
+    thresholds: [100, 500, 1000]
+
+# Data generation for this module
+synthetic_data:
+  # Override global defaults for data structures testing
+  default_samples: 50000  # Larger dataset for bars testing
+  price_start: 100.0
+  volatility: 0.015  # Slightly lower volatility for cleaner bars
+  trend: 0.0001
+  include_gaps: true
+  include_outliers: true
+  
+  # Data structures specific synthetic data
+  tick_data:
+    min_tick_size: 0.01
+    spread_percentage: 0.001
+    volume_distribution: "lognormal"
+    volume_mean: 1000
+    volume_std: 500
+    
+  # Market microstructure simulation
+  microstructure:
+    bid_ask_spread: 0.001
+    market_impact: 0.0001
+    liquidity_cycles: true
+    trading_sessions: true
+
+# Performance testing specific to data structures
+performance_testing:
+  enabled: true
+  data_sizes: [1000, 5000, 10000, 25000, 50000]  # Larger sizes for bars
+  iterations: 3
+  memory_profiling: true
+  cpu_profiling: false
+  
+  # Stress testing
+  stress_testing:
+    enabled: true
+    extreme_volatility: 0.5
+    large_dataset_size: 100000
+    memory_stress_test: true
+    
+  # Benchmarking
+  benchmarks:
+    target_throughput_samples_per_second: 10000
+    max_memory_per_sample_bytes: 1000
+    max_generation_time_seconds: 5.0
+
+# Statistical analysis configuration
+statistical_analysis:
+  enabled: true
+  
+  # Tests to perform on generated bars
+  tests:
+    normality_tests: ["shapiro", "jarque_bera"]
+    stationarity_tests: ["adf", "kpss"]
+    autocorrelation_tests: true
+    volatility_clustering_tests: true
+    
+  # Analysis parameters
+  analysis_parameters:
+    significance_level: 0.05
+    max_lags: 20
+    rolling_window: 252
+    
+# Visualization settings for data structures
+visualization:
+  # Override global settings
+  dpi: 300
+  style: "seaborn-v0_8"
+  
+  # Specific plots for data structures
+  plots:
+    price_comparison: true
+    volume_analysis: true
+    statistical_analysis: true
+    performance_analysis: true
+    correlation_matrix: true
+    distribution_analysis: true
+    
+  # Plot configurations
+  plot_settings:
+    figure_size: [15, 10]
+    subplot_spacing: 0.3
+    color_palette: ["blue", "red", "green", "orange", "purple"]
+    
+# Quality assurance for data structures
+quality_assurance:
+  # OHLC validation
+  ohlc_validation:
+    check_high_low_consistency: true
+    check_open_close_range: true
+    allow_zero_volume: false
+    
+  # Bar consistency checks
+  bar_consistency:
+    check_monotonic_timestamps: true
+    check_volume_aggregation: true
+    check_price_continuity: true
+    max_price_gap_percentage: 10.0
+    
+  # Data integrity
+  data_integrity:
+    check_missing_bars: true
+    validate_bar_counts: true
+    check_aggregation_accuracy: true
+
+# Module-specific error handling
+error_handling:
+  # What to do with invalid data
+  invalid_data_strategy: "log_and_skip"  # Options: skip, raise, log_and_skip
+  
+  # Error tolerance
+  max_errors_per_batch: 10
+  max_total_error_percentage: 5.0
+  
+  # Recovery strategies
+  recovery:
+    retry_failed_batches: true
+    fallback_to_simple_bars: false
+    continue_on_batch_failure: true
+
+# Output configuration for data structures
+output:
+  # File formats
+  formats: ["csv", "parquet", "json"]
+  default_format: "csv"
+  
+  # Compression
+  compression: "gzip"
+  
+  # Metadata
+  include_metadata: true
+  metadata_format: "json"
+  
+  # File naming
+  naming_convention: "{bar_type}_bars_{timestamp}_{threshold}"
+  include_config_hash: true
+
+# Integration with other modules
+integration:
+  # Which other modules this feeds into
+  downstream_modules: ["labeling", "features", "portfolio"]
+  
+  # Data validation for downstream
+  downstream_validation:
+    ensure_complete_bars: true
+    validate_timestamp_format: true
+    check_required_columns: true

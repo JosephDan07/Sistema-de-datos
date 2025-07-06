@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-07-06T05:13:12.259089",
+  "total_tests": 5,
+  "tests_passed": 5,
+  "tests_failed": 0,
+  "execution_time": 0.22162500000000002,
+  "test_details": {
+    "test_basic_functionality": {
+      "passed": true,
+      "execution_time": 2.9e-05,
+      "data_samples": 1000
+    },
+    "test_simple_labeling": {
+      "passed": true,
+      "execution_time": 0.000292,
+      "labels_created": 1000,
+      "positive_labels": 510,
+      "negative_labels": 490
+    },
+    "test_statistical_analysis": {
+      "passed": true,
+      "execution_time": 0.000299,
+      "mean_return": 0.00019332055822325503,
+      "std_return": 0.009792159381796759,
+      "skewness": 0.1169763688200138,
+      "kurtosis": 0.07256220235414768
+    },
+    "test_triple_barrier_concept": {
+      "passed": true,
+      "execution_time": 0.219227,
+      "labels_created": 1000,
+      "profit_labels": 0,
+      "loss_labels": 0,
+      "neutral_labels": 1000
+    },
+    "test_volatility_calculation": {
+      "passed": true,
+      "execution_time": 0.001778,
+      "volatility_samples": 981
+    }
+  }
+}

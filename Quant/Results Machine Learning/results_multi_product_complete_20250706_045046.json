@@ -1,0 +1,18 @@
+{
+  "performance_results": {
+    "portfolio_size_2": {
+      "error": "ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'"
+    },
+    "portfolio_size_3": {
+      "error": "ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'"
+    },
+    "portfolio_size_5": {
+      "error": "ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'"
+    }
+  },
+  "test_performance_benchmarks": {
+    "execution_time": 0.01389,
+    "timestamp": "2025-07-06T04:50:46.943600",
+    "status": "passed"
+  }
+}

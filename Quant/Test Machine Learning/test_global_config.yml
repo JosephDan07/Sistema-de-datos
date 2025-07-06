@@ -1,0 +1,134 @@
+# Test Machine Learning - Global Configuration
+# ===========================================
+# This is the global configuration file for all testing modules
+# It provides default settings that can be overridden by module-specific configs
+
+# Global Test Settings
+global_settings:
+  # Execution parameters
+  max_execution_time: 300  # seconds
+  memory_limit_mb: 4096
+  cpu_cores: null  # null = auto-detect
+  
+  # Logging configuration
+  logging:
+    level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    file_output: true
+    console_output: true
+    
+  # Data generation defaults
+  synthetic_data:
+    default_samples: 10000
+    price_start: 100.0
+    volatility: 0.02
+    trend: 0.0001
+    include_gaps: true
+    include_outliers: true
+    random_seed: 42
+    
+  # Performance testing
+  performance_testing:
+    enabled: true
+    data_sizes: [1000, 5000, 10000, 25000]
+    iterations: 3
+    memory_profiling: true
+    
+  # Visualization settings
+  visualization:
+    dpi: 300
+    style: "seaborn-v0_8"
+    palette: "husl"
+    figure_size: [12, 8]
+    save_format: "png"
+    
+  # Report generation
+  reports:
+    generate_html: true
+    generate_json: true
+    generate_summary: true
+    include_plots: true
+    
+  # Output organization
+  output:
+    base_directory: "../Results Machine Learning"
+    create_timestamped_dirs: false
+    cleanup_old_results: false
+    max_result_age_days: 30
+
+# Module-specific overrides (can be overridden by module configs)
+module_defaults:
+  # Data Structures module
+  data_structures:
+    bar_types: ["time", "tick", "volume", "dollar"]
+    time_frequencies: ["1Min", "5Min", "15Min", "1H"]
+    tick_thresholds: [100, 500, 1000, 2000]
+    volume_thresholds: [5000, 10000, 25000, 50000]
+    dollar_thresholds: [100000, 250000, 500000, 1000000]
+    
+  # Labeling module  
+  labeling:
+    methods: ["triple_barrier", "trend_scanning", "tail_sets"]
+    horizons: [10, 20, 50]
+    barriers: [0.01, 0.02, 0.05]
+    
+  # Features module
+  features:
+    methods: ["fracdiff", "autocorr", "rolling_stats"]
+    windows: [10, 20, 50, 100]
+    
+  # Util module
+  util:
+    test_multiprocessing: true
+    test_numba_fallback: true
+
+# Quality assurance settings
+quality_assurance:
+  # Data validation
+  data_validation:
+    check_missing_values: true
+    check_data_types: true
+    check_value_ranges: true
+    max_missing_percentage: 5.0
+    
+  # Statistical tests
+  statistical_tests:
+    normality_tests: true
+    stationarity_tests: true
+    correlation_analysis: true
+    outlier_detection: true
+    
+  # Performance benchmarks
+  benchmarks:
+    max_execution_time_per_test: 60  # seconds
+    min_throughput_samples_per_second: 1000
+    max_memory_usage_mb: 1024
+
+# Integration settings
+integration:
+  # Dashboard integration
+  dashboard:
+    auto_update: true
+    include_in_central_dashboard: true
+    generate_preview_images: true
+    
+  # External dependencies
+  dependencies:
+    required_packages: ["numpy", "pandas", "scipy", "matplotlib", "seaborn"]
+    optional_packages: ["plotly", "numba", "statsmodels"]
+    check_versions: true
+    
+# Environment-specific overrides
+environments:
+  development:
+    logging.level: "DEBUG"
+    performance_testing.enabled: true
+    
+  testing:
+    logging.level: "INFO"
+    synthetic_data.default_samples: 5000
+    
+  production:
+    logging.level: "WARNING" 
+    performance_testing.enabled: false
+    cleanup_old_results: true

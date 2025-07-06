@@ -1,0 +1,188 @@
+# ================================================================================
+# CONFIGURACIÓN GLOBAL - SISTEMA DE TESTING AVANZADO
+# Machine Learning for Finance - Professional Testing Framework
+# ================================================================================
+
+# CONFIGURACIONES GENERALES
+project:
+  name: "ML Finance Testing Framework"
+  version: "2.0.0"
+  description: "Sistema avanzado de testing para módulos de Machine Learning financiero"
+  author: "Advanced ML Finance Team"
+  
+# RUTAS DEL PROYECTO
+paths:
+  base_path: "./Quant"
+  ml_modules_path: "./Quant/Machine Learning"
+  test_modules_path: "./Quant/Test Machine Learning"
+  results_path: "./Quant/Results Machine Learning"
+  data_path: "./Quant/Datos"
+  
+# CONFIGURACIÓN DE TESTING
+testing:
+  # Configuraciones generales de performance
+  performance:
+    default_data_sizes: [1000, 5000, 10000, 25000, 50000]
+    memory_monitoring: true
+    profiling_enabled: true
+    benchmark_iterations: 3
+    timeout_seconds: 300
+    
+  # Configuraciones de datos sintéticos
+  synthetic_data:
+    default_samples: 10000
+    price_start: 100.0
+    volatility: 0.02
+    trend: 0.0001
+    random_seed: 42
+    include_gaps: true
+    include_outliers: true
+    
+  # Configuraciones de stress testing
+  stress_testing:
+    extreme_volatility: 0.5
+    large_dataset_size: 100000
+    edge_case_samples: 1000
+    outlier_multipliers: [0.1, 5.0, 10.0]
+    
+  # Configuraciones de visualización
+  visualization:
+    dpi: 300
+    figsize: [15, 10]
+    style: "seaborn-v0_8"
+    color_palette: "husl"
+    save_plots: true
+    interactive_plots: true
+    
+# CONFIGURACIÓN DE LOGGING
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  save_logs: true
+  log_file: "testing_framework.log"
+  
+# CONFIGURACIÓN DE REPORTES
+reporting:
+  generate_html: true
+  generate_json: true
+  generate_summary: true
+  include_plots: true
+  include_performance_metrics: true
+  include_statistical_analysis: true
+  
+# CONFIGURACIÓN POR MÓDULO
+modules:
+  # Data Structures Module
+  data_structures:
+    enabled: true
+    priority: 1
+    tests:
+      - base_bars
+      - imbalance_bars
+      - run_bars
+      - standard_data_structures
+      - time_data_structures
+    performance_focus: true
+    memory_optimization: true
+    
+  # Util Module  
+  util:
+    enabled: true
+    priority: 2
+    tests:
+      - fast_ewma
+      - generate_dataset
+      - multiprocess
+      - volatility
+      - volume_classifier
+    numba_optimization: true
+    parallel_testing: true
+    
+  # Labeling Module
+  labeling:
+    enabled: true
+    priority: 3
+    tests:
+      - labeling
+      - trend_scanning
+      - tail_sets
+      - bull_bear
+      - matrix_flags
+    reproducibility_focus: true
+    edge_case_testing: true
+    
+  # Multi Product Module
+  multi_product:
+    enabled: true
+    priority: 4
+    tests:
+      - etf_trick
+      - futures_roll
+    data_consistency_focus: true
+    auditing_enabled: true
+
+# CONFIGURACIÓN DE OPTIMIZACIÓN
+optimization:
+  # Numba settings
+  numba:
+    enabled: true
+    cache: true
+    parallel: true
+    fastmath: true
+    
+  # Multiprocessing settings
+  multiprocessing:
+    enabled: true
+    max_workers: 4
+    chunk_size: 1000
+    
+  # Memory settings
+  memory:
+    max_memory_mb: 8192
+    gc_frequency: 100
+    batch_processing: true
+    
+# CONFIGURACIÓN DE VALIDACIÓN
+validation:
+  strict_input_validation: true
+  type_checking: true
+  nan_handling: true
+  outlier_detection: true
+  data_consistency_checks: true
+  
+# CONFIGURACIÓN DE ARCHIVOS DE SALIDA
+output:
+  # Estructura de directorios
+  create_module_dirs: true
+  create_timestamp_dirs: true
+  
+  # Limpieza automática
+  cleanup_old_results: true
+  max_result_age_days: 30
+  max_results_per_module: 10
+  
+  # Compresión
+  compress_large_files: true
+  compression_threshold_mb: 100
+  
+# CONFIGURACIÓN DE DEPENDENCIAS
+dependencies:
+  required:
+    - numpy
+    - pandas
+    - matplotlib
+    - seaborn
+    - scipy
+  optional:
+    - plotly
+    - numba
+    - statsmodels
+    - psutil
+    - cython
+    
+# CONFIGURACIÓN DE DESARROLLO
+development:
+  debug_mode: false
+  verbose_output: true
+  save_intermediate_results: false
+  profiling_enabled: false

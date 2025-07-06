@@ -1,0 +1,67 @@
+{
+  "timestamp": "2025-07-06T05:13:11.838482",
+  "total_tests": 6,
+  "tests_passed": 6,
+  "tests_failed": 0,
+  "execution_time": 0.004977,
+  "test_details": {
+    "test_basic_functionality": {
+      "passed": true,
+      "execution_time": 4.2e-05,
+      "data_samples": 1000,
+      "products_count": 3
+    },
+    "test_beta_calculation": {
+      "passed": true,
+      "execution_time": 0.000876,
+      "beta_value": 0.6500196488495664,
+      "covariance": 0.0002566440312447207,
+      "variance_b": 0.00039482503597997493
+    },
+    "test_correlation_analysis": {
+      "passed": true,
+      "execution_time": 0.001125,
+      "correlation_matrix_shape": [
+        3,
+        3
+      ],
+      "max_correlation": 1.0,
+      "min_correlation": 0.15905765631995625
+    },
+    "test_covariance_analysis": {
+      "passed": true,
+      "execution_time": 0.00096,
+      "covariance_matrix_shape": [
+        3,
+        3
+      ],
+      "diagonal_values": [
+        0.0003835455414340409,
+        0.00039522025623621085,
+        0.0006454011729798074
+      ]
+    },
+    "test_portfolio_analysis": {
+      "passed": true,
+      "execution_time": 0.001405,
+      "portfolio_mean": 0.0006605603851769868,
+      "portfolio_std": 0.01615740951657863,
+      "portfolio_sharpe": 0.0408828150638384,
+      "weights": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ]
+    },
+    "test_volatility_analysis": {
+      "passed": true,
+      "execution_time": 0.000569,
+      "volatilities": {
+        "product_0": 0.019584318763593518,
+        "product_1": 0.01988014728909751,
+        "product_2": 0.025404747056009192
+      },
+      "avg_volatility": 0.02162307103623341
+    }
+  }
+}

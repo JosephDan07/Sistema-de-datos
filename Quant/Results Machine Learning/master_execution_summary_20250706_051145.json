@@ -1,0 +1,27 @@
+{
+  "timestamp": "2025-07-06T05:11:45.361913",
+  "execution_time": 3.4809532165527344,
+  "total_tests": 2,
+  "successful_tests": 2,
+  "failed_tests": 0,
+  "parallel_execution": false,
+  "timeout": 60,
+  "results": {
+    "data_structures": {
+      "success": true,
+      "message": "Completed in 0.50s",
+      "execution_time": 0.5012106895446777,
+      "output": "\ud83e\uddea Iniciando tests de data_structures...\n\ud83d\udcca Creando datos de muestra...\n\u2705 Datos de muestra creados: 1000 filas\n\ud83e\uddea TestDataStructuresSimple - Configuraci\u00f3n inicial completada\n\u2705 test_basic_functionality passed - 1000 samples\n\u2705 test_dollar_bars passed - 9 bars created\n\u2705 test_tick_bars passed - 10 bars created\n\u2705 test_time_bars passed - 200 bars created\n\u2705 test_volume_bars passed - 9 bars created\n\n\ud83d\udcca Resultados finales guardados en: /workspaces/Sistema-de-datos/Quant/Results Machine Learning/results_data_structures/test_results.json\n\u2705 Tests pasados: 5/5\n\u23f1\ufe0f  Tiempo total: 0.14s\n",
+      "error": "INFO:test_config_manager:Global configuration loaded from /workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_global_config.yml\nINFO:test_config_manager:Configuration manager initialized for environment: development\ntest_basic_functionality (__main__.TestDataStructuresSimple.test_basic_functionality)\nTest b\u00e1sico de funcionalidad ... ok\ntest_dollar_bars (__main__.TestDataStructuresSimple.test_dollar_bars)\nTest para dollar bars ... INFO:base_bars:Initialized dollar_bars bars with batch_size=20000000\nINFO:base_bars:Starting batch_run for dollar_bars bars\nINFO:base_bars:Processing batch 1 with 1000 rows...\nWARNING:base_bars:Could not apply outlier detection: 'Series' object has no attribute 'mad'\nINFO:base_bars:Generated 9 bars from batch 1 in 0.00s\nINFO:base_bars:Processing complete: 9 bars generated in 0.00s\nok\ntest_tick_bars (__main__.TestDataStructuresSimple.test_tick_bars)\nTest para tick bars ... INFO:base_bars:Initialized tick_bars bars with batch_size=20000000\nINFO:base_bars:Starting batch_run for tick_bars bars\nINFO:base_bars:Processing batch 1 with 1000 rows...\nWARNING:base_bars:Could not apply outlier detection: 'Series' object has no attribute 'mad'\nINFO:base_bars:Generated 10 bars from batch 1 in 0.00s\nINFO:base_bars:Processing complete: 10 bars generated in 0.00s\nok\ntest_time_bars (__main__.TestDataStructuresSimple.test_time_bars)\nTest para time bars ... INFO:base_bars:Initialized time_bars bars with batch_size=20000000\nINFO:base_bars:Starting batch_run for time_bars bars\nINFO:base_bars:Processing batch 1 with 1000 rows...\nWARNING:base_bars:Could not apply outlier detection: 'Series' object has no attribute 'mad'\nINFO:base_bars:Generated 200 bars from batch 1 in 0.12s\nINFO:base_bars:Processing complete: 200 bars generated in 0.12s\nok\ntest_volume_bars (__main__.TestDataStructuresSimple.test_volume_bars)\nTest para volume bars ... INFO:base_bars:Initialized volume_bars bars with batch_size=20000000\nINFO:base_bars:Starting batch_run for volume_bars bars\nINFO:base_bars:Processing batch 1 with 1000 rows...\nWARNING:base_bars:Could not apply outlier detection: 'Series' object has no attribute 'mad'\nINFO:base_bars:Generated 9 bars from batch 1 in 0.00s\nINFO:base_bars:Processing complete: 9 bars generated in 0.00s\nok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.154s\n\nOK\n",
+      "return_code": 0
+    },
+    "util": {
+      "success": true,
+      "message": "Completed in 0.98s",
+      "execution_time": 0.9791433811187744,
+      "output": "\ud83e\uddea Iniciando tests de util...\n\ud83d\udcca Creando datos de muestra...\n\u2705 Datos de muestra creados: 1000 filas\n\ud83e\uddea TestUtilSimple - Configuraci\u00f3n inicial completada\n\u2705 test_basic_functionality passed - 1000 samples\n\u2705 test_data_processing passed\n\u2705 test_math_operations passed\n\n\ud83d\udcca Resultados finales guardados en: /workspaces/Sistema-de-datos/Quant/Results Machine Learning/results_util/test_results.json\n\u2705 Tests pasados: 3/3\n\u23f1\ufe0f  Tiempo total: 0.00s\n",
+      "error": "INFO:test_config_manager:Global configuration loaded from /workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_global_config.yml\nINFO:test_config_manager:Configuration manager initialized for environment: development\ntest_basic_functionality (__main__.TestUtilSimple.test_basic_functionality)\nTest b\u00e1sico de funcionalidad ... ok\ntest_data_processing (__main__.TestUtilSimple.test_data_processing)\nTest b\u00e1sico de procesamiento de datos ... ok\ntest_math_operations (__main__.TestUtilSimple.test_math_operations)\nTest b\u00e1sico de operaciones matem\u00e1ticas ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.012s\n\nOK\n",
+      "return_code": 0
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-07-06T04:50:47.198808",
+  "execution_time": 1.0641558170318604,
+  "total_tests": 4,
+  "successful_tests": 0,
+  "failed_tests": 4,
+  "parallel_execution": true,
+  "timeout": 300,
+  "results": {
+    "data_structures": {
+      "success": false,
+      "message": "Failed with code 1",
+      "execution_time": 0.5918893814086914,
+      "output": "",
+      "error": "Traceback (most recent call last):\n  File \"/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_data_structures/test_complete_data_structures.py\", line 22, in <module>\n    from data_structures.base_bars import TimeBars, TickBars, VolumeBars, DollarBars\nImportError: cannot import name 'TimeBars' from 'data_structures.base_bars' (/workspaces/Sistema-de-datos/Quant/Machine Learning/data_structures/base_bars.py). Did you mean: 'BaseBars'?\n",
+      "return_code": 1
+    },
+    "util": {
+      "success": false,
+      "message": "Failed with code 1",
+      "execution_time": 0.7738513946533203,
+      "output": "",
+      "error": "Traceback (most recent call last):\n  File \"/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_util/test_complete_util.py\", line 24, in <module>\n    from util.fast_ewma import ewma_from_com\nImportError: cannot import name 'ewma_from_com' from 'util.fast_ewma' (/workspaces/Sistema-de-datos/Quant/Machine Learning/util/fast_ewma.py)\n",
+      "return_code": 1
+    },
+    "multi_product": {
+      "success": false,
+      "message": "Failed with code 1",
+      "execution_time": 0.8551931381225586,
+      "output": "",
+      "error": "INFO:test_config_manager:Global configuration loaded from /workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_global_config.yml\nINFO:test_config_manager:Configuration manager initialized for environment: development\nINFO:__main__:Loaded 10 datasets for multi_product testing\ntest_edge_cases_and_robustness (__main__.TestCompleteMultiProduct.test_edge_cases_and_robustness)\nTest de casos edge y robustez ... INFO:__main__:Testing edge cases and robustness\nFAIL\ntest_etf_trick_equal_weight_portfolio (__main__.TestCompleteMultiProduct.test_etf_trick_equal_weight_portfolio)\nTest ETF Trick con portfolio de pesos iguales ... INFO:__main__:Testing ETF Trick with equal weight portfolio\nERROR:__main__:ETF Trick test failed for portfolio 1: ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'\nERROR:__main__:ETF Trick test failed for portfolio 2: ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'\nERROR:__main__:ETF Trick test failed for portfolio 3: ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'\nok\ntest_etf_trick_momentum_portfolio (__main__.TestCompleteMultiProduct.test_etf_trick_momentum_portfolio)\nTest ETF Trick con portfolio basado en momentum ... INFO:__main__:Testing ETF Trick with momentum portfolio\nERROR:__main__:ETF Trick momentum portfolio test failed: No axis named 1 for object type Series\nok\ntest_etf_trick_rebalancing_costs (__main__.TestCompleteMultiProduct.test_etf_trick_rebalancing_costs)\nTest ETF Trick con costos de rebalancing ... INFO:__main__:Testing ETF Trick with rebalancing costs\nWARNING:__main__:Rebalancing cost test failed for cost level 0.0: ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'\nWARNING:__main__:Rebalancing cost test failed for cost level 0.001: ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'\nWARNING:__main__:Rebalancing cost test failed for cost level 0.005: ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'\nWARNING:__main__:Rebalancing cost test failed for cost level 0.01: ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'\nINFO:__main__:ETF Trick rebalancing costs test completed\nok\ntest_futures_roll_functionality (__main__.TestCompleteMultiProduct.test_futures_roll_functionality)\nTest funcionalidad de Futures Roll ... INFO:__main__:Testing Futures Roll functionality\nWARNING:__main__:Futures roll test failed for GLD_daily: FuturesRoll.create_continuous_series() got an unexpected keyword argument 'contracts'\nWARNING:__main__:Futures roll test failed for SLV_daily: FuturesRoll.create_continuous_series() got an unexpected keyword argument 'contracts'\nWARNING:__main__:Futures roll test failed for USO_daily: FuturesRoll.create_continuous_series() got an unexpected keyword argument 'contracts'\nINFO:__main__:Futures Roll functionality test completed\nok\ntest_performance_benchmarks (__main__.TestCompleteMultiProduct.test_performance_benchmarks)\nTest de performance con benchmarks ... INFO:__main__:Testing performance benchmarks\nERROR:__main__:Performance benchmark failed for portfolio size 2: ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'\nERROR:__main__:Performance benchmark failed for portfolio size 3: ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'\nERROR:__main__:Performance benchmark failed for portfolio size 5: ETFTrick.__init__() missing 4 required positional arguments: 'open_df', 'close_df', 'alloc_df', and 'costs_df'\nok\n\n======================================================================\nFAIL: test_edge_cases_and_robustness (__main__.TestCompleteMultiProduct.test_edge_cases_and_robustness)\nTest de casos edge y robustez\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_multi_product/test_complete_multi_product.py\", line 749, in test_edge_cases_and_robustness\n    self.assertGreater(passed_tests, 0, \"No edge case tests passed\")\nAssertionError: 0 not greater than 0 : No edge case tests passed\n\n----------------------------------------------------------------------\nRan 6 tests in 0.197s\n\nFAILED (failures=1)\n",
+      "return_code": 1
+    },
+    "labeling": {
+      "success": false,
+      "message": "Failed with code 1",
+      "execution_time": 1.0627496242523193,
+      "output": "",
+      "error": "Traceback (most recent call last):\n  File \"/workspaces/Sistema-de-datos/Quant/Test Machine Learning/test_labeling/test_complete_labeling.py\", line 22, in <module>\n    from labeling.labeling import get_events, get_bins, get_3_barriers, apply_pt_sl_on_t1, drop_labels\nImportError: cannot import name 'get_3_barriers' from 'labeling.labeling' (/workspaces/Sistema-de-datos/Quant/Machine Learning/labeling/labeling.py)\n",
+      "return_code": 1
+    }
+  }
+}
