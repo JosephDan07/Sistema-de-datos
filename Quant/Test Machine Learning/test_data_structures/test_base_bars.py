@@ -29,8 +29,10 @@ import json
 import numpy as np
 import pandas as pd
 from scipy import stats
+from scipy.stats import norm
 import matplotlib.pyplot as plt
 import seaborn as sns
+import traceback
 
 # Configure logging
 logging.basicConfig(
@@ -1060,3 +1062,471 @@ class TestBaseBarsAdvanced:
             
         except Exception as e:
             logger.error(f"    ❌ Error creating performance plots: {str(e)}")
+    
+    def _create_statistical_plots(self, bars_data):
+        """
+        Create statistical analysis plots for bar data.
+        
+        Args:
+            bars_data (pd.DataFrame): The bars data to analyze
+        """
+        logger.info("  📊 Creating statistical analysis plots...")
+        
+        if bars_data is None or bars_data.empty:
+            logger.warning("    ⚠️ No bars data available for statistical plotting")
+            return
+        
+        try:
+            # Statistical analysis
+            stats = {}
+            numeric_columns = ['open', 'high', 'low', 'close', 'volume', 'dollar_volume']
+            
+            for col in numeric_columns:
+                if col in bars_data.columns:
+                    series = bars_data[col].dropna()
+                    if len(series) > 0:
+                        stats[col] = {
+                            'mean': series.mean(),
+                            'std': series.std(),
+                            'skewness': series.skew(),
+                            'kurtosis': series.kurtosis(),
+                            'min': series.min(),
+                            'max': series.max(),
+                            'median': series.median(),
+                            'q25': series.quantile(0.25),
+                            'q75': series.quantile(0.75)
+                        }
+            
+            # Create statistical plots
+            fig, axes = plt.subplots(3, 2, figsize=(16, 12))
+            fig.suptitle('Statistical Analysis - Bar Data Properties', fontsize=16, fontweight='bold')
+            
+            # Price distribution (close prices)
+            if 'close' in bars_data.columns and not bars_data['close'].empty:
+                close_prices = bars_data['close'].dropna()
+                axes[0, 0].hist(close_prices, bins=50, alpha=0.7, color='blue', edgecolor='black')
+                axes[0, 0].set_title('Close Price Distribution', fontsize=12, fontweight='bold')
+                axes[0, 0].set_xlabel('Close Price')
+                axes[0, 0].set_ylabel('Frequency')
+                axes[0, 0].grid(True, alpha=0.3)
+                
+                # Add statistical info
+                mean_price = close_prices.mean()
+                std_price = close_prices.std()
+                axes[0, 0].axvline(mean_price, color='red', linestyle='--', 
+                                  label=f'Mean: ${mean_price:.2f}')
+                axes[0, 0].axvline(mean_price + std_price, color='orange', linestyle='--', 
+                                  label=f'±1σ: ${std_price:.2f}')
+                axes[0, 0].axvline(mean_price - std_price, color='orange', linestyle='--')
+                axes[0, 0].legend()
+            
+            # Volume distribution
+            if 'volume' in bars_data.columns and not bars_data['volume'].empty:
+                volume_data = bars_data['volume'].dropna()
+                axes[0, 1].hist(volume_data, bins=50, alpha=0.7, color='green', edgecolor='black')
+                axes[0, 1].set_title('Volume Distribution', fontsize=12, fontweight='bold')
+                axes[0, 1].set_xlabel('Volume')
+                axes[0, 1].set_ylabel('Frequency')
+                axes[0, 1].grid(True, alpha=0.3)
+                axes[0, 1].set_yscale('log')
+            
+            # Price volatility (returns)
+            if 'close' in bars_data.columns and len(bars_data['close']) > 1:
+                returns = bars_data['close'].pct_change().dropna()
+                if len(returns) > 0:
+                    axes[1, 0].hist(returns, bins=50, alpha=0.7, color='purple', edgecolor='black')
+                    axes[1, 0].set_title('Returns Distribution', fontsize=12, fontweight='bold')
+                    axes[1, 0].set_xlabel('Return (%)')
+                    axes[1, 0].set_ylabel('Frequency')
+                    axes[1, 0].grid(True, alpha=0.3)
+                    
+                    # Add normal distribution overlay
+                    x = np.linspace(returns.min(), returns.max(), 100)
+                    y = norm.pdf(x, returns.mean(), returns.std())
+                    axes[1, 0].plot(x, y * len(returns) * (returns.max() - returns.min()) / 50, 
+                                   'r-', linewidth=2, label='Normal Distribution')
+                    axes[1, 0].legend()
+            
+            # Statistical summary heatmap
+            if stats:
+                stat_names = ['mean', 'std', 'skewness', 'kurtosis']
+                columns = list(stats.keys())
+                
+                stat_matrix = np.zeros((len(stat_names), len(columns)))
+                for i, stat_name in enumerate(stat_names):
+                    for j, col in enumerate(columns):
+                        if stat_name in stats[col]:
+                            stat_matrix[i, j] = stats[col][stat_name]
+                
+                # Normalize for better visualization
+                stat_matrix_norm = (stat_matrix - stat_matrix.min()) / (stat_matrix.max() - stat_matrix.min() + 1e-10)
+                
+                im = axes[1, 1].imshow(stat_matrix_norm, cmap='viridis', aspect='auto')
+                axes[1, 1].set_title('Statistical Summary Heatmap', fontsize=12, fontweight='bold')
+                axes[1, 1].set_xticks(range(len(columns)))
+                axes[1, 1].set_xticklabels(columns, rotation=45)
+                axes[1, 1].set_yticks(range(len(stat_names)))
+                axes[1, 1].set_yticklabels(stat_names)
+                
+                # Add colorbar
+                plt.colorbar(im, ax=axes[1, 1], fraction=0.046, pad=0.04)
+                
+                # Add text annotations
+                for i in range(len(stat_names)):
+                    for j in range(len(columns)):
+                        text = axes[1, 1].text(j, i, f'{stat_matrix[i, j]:.3f}',
+                                             ha="center", va="center", color="white", fontsize=8)
+            
+            # Time series plot (if datetime index available)
+            if 'close' in bars_data.columns:
+                axes[2, 0].plot(bars_data.index, bars_data['close'], 
+                               color='blue', linewidth=1, alpha=0.8)
+                axes[2, 0].set_title('Price Time Series', fontsize=12, fontweight='bold')
+                axes[2, 0].set_xlabel('Time')
+                axes[2, 0].set_ylabel('Close Price')
+                axes[2, 0].grid(True, alpha=0.3)
+                
+                # Add volume on secondary axis
+                if 'volume' in bars_data.columns:
+                    ax2 = axes[2, 0].twinx()
+                    ax2.bar(bars_data.index, bars_data['volume'], 
+                           alpha=0.3, color='green', width=0.8)
+                    ax2.set_ylabel('Volume', color='green')
+                    ax2.tick_params(axis='y', labelcolor='green')
+            
+            # Correlation matrix
+            if len(stats) > 1:
+                corr_data = bars_data[list(stats.keys())].corr()
+                im = axes[2, 1].imshow(corr_data, cmap='coolwarm', vmin=-1, vmax=1, aspect='auto')
+                axes[2, 1].set_title('Correlation Matrix', fontsize=12, fontweight='bold')
+                axes[2, 1].set_xticks(range(len(corr_data.columns)))
+                axes[2, 1].set_xticklabels(corr_data.columns, rotation=45)
+                axes[2, 1].set_yticks(range(len(corr_data.index)))
+                axes[2, 1].set_yticklabels(corr_data.index)
+                
+                # Add colorbar
+                plt.colorbar(im, ax=axes[2, 1], fraction=0.046, pad=0.04)
+                
+                # Add text annotations
+                for i in range(len(corr_data.index)):
+                    for j in range(len(corr_data.columns)):
+                        text = axes[2, 1].text(j, i, f'{corr_data.iloc[i, j]:.2f}',
+                                             ha="center", va="center", color="black", fontsize=8)
+            
+            plt.tight_layout()
+            plot_path = os.path.join(self.save_path, 'statistical_analysis.png')
+            plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+            plt.close()
+            
+            self.report['plots_generated'].append(plot_path)
+            self.report['statistical_analysis'] = stats
+            logger.info(f"    📊 Statistical analysis plot saved to {plot_path}")
+            
+        except Exception as e:
+            logger.error(f"    ❌ Error creating statistical plots: {str(e)}")
+            logger.error(f"    Debug info: {traceback.format_exc()}")
+    
+    def _create_interactive_dashboard(self):
+        """
+        Create an interactive dashboard using Plotly for advanced data visualization.
+        """
+        logger.info("  🎯 Creating interactive dashboard...")
+        
+        try:
+            # Check if plotly is available
+            import plotly.graph_objects as go
+            from plotly.subplots import make_subplots
+            import plotly.express as px
+            
+            # Create subplots
+            fig = make_subplots(
+                rows=3, cols=2,
+                subplot_titles=('Performance Metrics', 'Memory Usage', 
+                              'Data Quality Score', 'Test Results Summary',
+                              'Execution Time Trends', 'Statistical Distribution'),
+                specs=[[{"secondary_y": True}, {"secondary_y": False}],
+                       [{"secondary_y": False}, {"secondary_y": False}],
+                       [{"secondary_y": False}, {"secondary_y": False}]]
+            )
+            
+            # Performance metrics plot
+            if hasattr(self, 'performance_metrics') and self.performance_metrics:
+                perf_data = self.performance_metrics.get('detailed_performance', {})
+                if perf_data:
+                    data_sizes = sorted(perf_data.keys())
+                    bar_types = ['time', 'tick', 'volume', 'dollar']
+                    colors = ['blue', 'red', 'green', 'orange']
+                    
+                    for i, bar_type in enumerate(bar_types):
+                        execution_times = []
+                        throughputs = []
+                        valid_sizes = []
+                        
+                        for size in data_sizes:
+                            if (bar_type in perf_data[size] and 
+                                'execution_time' in perf_data[size][bar_type]):
+                                execution_times.append(perf_data[size][bar_type]['execution_time'])
+                                throughputs.append(perf_data[size][bar_type].get('throughput', 0))
+                                valid_sizes.append(size)
+                        
+                        if execution_times:
+                            # Execution time
+                            fig.add_trace(
+                                go.Scatter(x=valid_sizes, y=execution_times,
+                                          mode='lines+markers',
+                                          name=f'{bar_type} (time)',
+                                          line=dict(color=colors[i]),
+                                          hovertemplate='Size: %{x}<br>Time: %{y:.4f}s<extra></extra>'),
+                                row=1, col=1
+                            )
+                            
+                            # Throughput
+                            fig.add_trace(
+                                go.Scatter(x=valid_sizes, y=throughputs,
+                                          mode='lines+markers',
+                                          name=f'{bar_type} (throughput)',
+                                          line=dict(color=colors[i], dash='dash'),
+                                          hovertemplate='Size: %{x}<br>Throughput: %{y:.2f} samples/s<extra></extra>'),
+                                row=1, col=1, secondary_y=True
+                            )
+            
+            # Memory usage plot
+            if hasattr(self, 'performance_metrics') and self.performance_metrics:
+                memory_data = self.performance_metrics.get('memory_usage', {})
+                if memory_data:
+                    methods = list(memory_data.keys())
+                    memory_values = [memory_data[method] for method in methods]
+                    
+                    fig.add_trace(
+                        go.Bar(x=methods, y=memory_values,
+                               name='Memory Usage',
+                               marker_color='lightblue',
+                               hovertemplate='Method: %{x}<br>Memory: %{y:.2f} MB<extra></extra>'),
+                        row=1, col=2
+                    )
+            
+            # Data quality scores
+            if hasattr(self, 'data_quality_scores') and self.data_quality_scores:
+                quality_metrics = list(self.data_quality_scores.keys())
+                quality_values = [self.data_quality_scores[metric] for metric in quality_metrics]
+                
+                fig.add_trace(
+                    go.Bar(x=quality_metrics, y=quality_values,
+                           name='Data Quality',
+                           marker_color='lightgreen',
+                           hovertemplate='Metric: %{x}<br>Score: %{y:.2f}<extra></extra>'),
+                    row=2, col=1
+                )
+            
+            # Test results summary
+            if hasattr(self, 'test_results') and self.test_results:
+                passed = sum(1 for result in self.test_results.values() if result.get('passed', False))
+                failed = len(self.test_results) - passed
+                
+                fig.add_trace(
+                    go.Pie(labels=['Passed', 'Failed'], values=[passed, failed],
+                           marker_colors=['lightgreen', 'lightcoral'],
+                           hovertemplate='%{label}: %{value}<br>%{percent}<extra></extra>'),
+                    row=2, col=2
+                )
+            
+            # Execution time trends
+            if hasattr(self, 'execution_history') and self.execution_history:
+                timestamps = list(self.execution_history.keys())
+                exec_times = [self.execution_history[ts]['execution_time'] for ts in timestamps]
+                
+                fig.add_trace(
+                    go.Scatter(x=timestamps, y=exec_times,
+                              mode='lines+markers',
+                              name='Execution Time Trend',
+                              line=dict(color='purple'),
+                              hovertemplate='Time: %{x}<br>Execution: %{y:.4f}s<extra></extra>'),
+                    row=3, col=1
+                )
+            
+            # Statistical distribution (if available)
+            if hasattr(self, 'statistical_data') and self.statistical_data:
+                # Use returns data if available
+                if 'returns' in self.statistical_data:
+                    returns = self.statistical_data['returns']
+                    fig.add_trace(
+                        go.Histogram(x=returns, nbinsx=50,
+                                   name='Returns Distribution',
+                                   marker_color='lightblue',
+                                   hovertemplate='Return: %{x:.4f}<br>Count: %{y}<extra></extra>'),
+                        row=3, col=2
+                    )
+            
+            # Update layout
+            fig.update_layout(
+                title_text="Base Bars Testing - Interactive Dashboard",
+                title_font_size=20,
+                showlegend=True,
+                height=1200,
+                template='plotly_white'
+            )
+            
+            # Update axes labels
+            fig.update_xaxes(title_text="Data Size", row=1, col=1)
+            fig.update_yaxes(title_text="Execution Time (s)", row=1, col=1)
+            fig.update_yaxes(title_text="Throughput (samples/s)", row=1, col=1, secondary_y=True)
+            
+            fig.update_xaxes(title_text="Method", row=1, col=2)
+            fig.update_yaxes(title_text="Memory (MB)", row=1, col=2)
+            
+            fig.update_xaxes(title_text="Quality Metric", row=2, col=1)
+            fig.update_yaxes(title_text="Score", row=2, col=1)
+            
+            fig.update_xaxes(title_text="Time", row=3, col=1)
+            fig.update_yaxes(title_text="Execution Time (s)", row=3, col=1)
+            
+            fig.update_xaxes(title_text="Return Value", row=3, col=2)
+            fig.update_yaxes(title_text="Frequency", row=3, col=2)
+            
+            # Save interactive dashboard
+            dashboard_path = os.path.join(self.save_path, 'interactive_dashboard.html')
+            fig.write_html(dashboard_path)
+            
+            self.report['interactive_dashboard'] = dashboard_path
+            logger.info(f"    🎯 Interactive dashboard saved to {dashboard_path}")
+            
+        except ImportError:
+            logger.warning("    ⚠️ Plotly not available - skipping interactive dashboard")
+        except Exception as e:
+            logger.error(f"    ❌ Error creating interactive dashboard: {str(e)}")
+            logger.error(f"    Debug info: {traceback.format_exc()}")
+    
+    def _generate_reports(self):
+        """Generate comprehensive HTML and JSON reports"""
+        logger.info("📄 Generating comprehensive reports...")
+        
+        try:
+            # Generate JSON report
+            json_report_path = os.path.join(self.save_path, 'test_report.json')
+            with open(json_report_path, 'w') as f:
+                json.dump(self.report, f, indent=2, default=str)
+            
+            # Generate HTML report
+            html_report_path = os.path.join(self.save_path, 'test_report.html')
+            html_content = self._generate_html_report()
+            
+            with open(html_report_path, 'w') as f:
+                f.write(html_content)
+            
+            # Generate summary report for central dashboard
+            summary_path = os.path.join(self.save_path, 'test_summary.json')
+            summary = {
+                'module_name': 'test_base_bars',
+                'test_date': self.report['test_date'],
+                'tests_run': self.report['tests_run'],
+                'tests_passed': self.report['tests_passed'],
+                'tests_failed': self.report['tests_failed'],
+                'success_rate': (self.report['tests_passed'] / max(self.report['tests_run'], 1)) * 100,
+                'plots_generated': len(self.report['plots_generated']),
+                'html_report': html_report_path,
+                'json_report': json_report_path,
+                'plots': self.report['plots_generated']
+            }
+            
+            with open(summary_path, 'w') as f:
+                json.dump(summary, f, indent=2)
+            
+            logger.info(f"  📄 JSON report saved to {json_report_path}")
+            logger.info(f"  📄 HTML report saved to {html_report_path}")
+            logger.info(f"  📄 Summary report saved to {summary_path}")
+            
+        except Exception as e:
+            logger.error(f"  ❌ Error generating reports: {str(e)}")
+    
+    def _generate_html_report(self):
+        """Generate HTML report content"""
+        html_template = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Base Bars Testing Report</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                .header {{ background-color: #f0f0f0; padding: 20px; border-radius: 5px; }}
+                .section {{ margin: 20px 0; padding: 15px; border-left: 4px solid #007acc; }}
+                .success {{ color: green; }}
+                .error {{ color: red; }}
+                .warning {{ color: orange; }}
+                table {{ border-collapse: collapse; width: 100%; }}
+                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                th {{ background-color: #f2f2f2; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Base Bars Testing Report</h1>
+                <p>Generated on: {self.report['test_date']}</p>
+                <p>Tests Run: {self.report['tests_run']}</p>
+                <p>Tests Passed: <span class="success">{self.report['tests_passed']}</span></p>
+                <p>Tests Failed: <span class="error">{self.report['tests_failed']}</span></p>
+                <p>Success Rate: {(self.report['tests_passed'] / max(self.report['tests_run'], 1)) * 100:.1f}%</p>
+            </div>
+            
+            <div class="section">
+                <h2>Performance Metrics</h2>
+                <p>Performance testing completed for different bar types and data sizes.</p>
+                <ul>
+                    <li>Execution time analysis</li>
+                    <li>Memory usage monitoring</li>
+                    <li>Throughput benchmarks</li>
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2>Generated Plots</h2>
+                <ul>
+                    {''.join([f"<li>{plot}</li>" for plot in self.report['plots_generated']])}
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2>Errors and Warnings</h2>
+                {'<p class="success">No errors detected!</p>' if not self.report['errors'] else ''}
+                {''.join([f'<p class="error">Error: {error}</p>' for error in self.report['errors']])}
+                {''.join([f'<p class="warning">Warning: {warning}</p>' for warning in self.report['warnings']])}
+            </div>
+        </body>
+        </html>
+        """
+        return html_template
+
+
+def main():
+    """Main function to run the complete test suite"""
+    print("🚀 Starting Base Bars Advanced Testing Suite")
+    print("=" * 60)
+    
+    # Initialize testing framework
+    tester = TestBaseBarsAdvanced(save_path="./test_results/")
+    
+    # Run comprehensive tests
+    results = tester.run_comprehensive_tests()
+    
+    # Print summary
+    print("\n" + "=" * 60)
+    print("📊 TEST SUMMARY")
+    print("=" * 60)
+    print(f"Tests Run: {results['tests_run']}")
+    print(f"Tests Passed: {results['tests_passed']}")
+    print(f"Tests Failed: {results['tests_failed']}")
+    print(f"Success Rate: {(results['tests_passed'] / max(results['tests_run'], 1)) * 100:.1f}%")
+    print(f"Plots Generated: {len(results['plots_generated'])}")
+    
+    if results['errors']:
+        print("\n❌ ERRORS:")
+        for error in results['errors']:
+            print(f"  - {error}")
+    
+    print(f"\n📁 Results saved to: {tester.save_path}")
+    print("✅ Testing completed successfully!")
+    
+    return results
+
+
+if __name__ == "__main__":
+    main()
