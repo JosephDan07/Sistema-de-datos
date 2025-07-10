@@ -28,7 +28,7 @@ except ImportError:
 if NUMBA_AVAILABLE:
     # Use lazy compilation to avoid startup delays
     @jit(nopython=True, cache=True)
-    def _ewma_numba(arr_in, window):  # pragma: no cover
+    def _ewma_numba(arr_in, window, ignore_na=False):  # pragma: no cover
         """
         Exponentially weighted moving average specified by a decay ``window`` to provide better adjustments for
         small windows via:
@@ -37,6 +37,7 @@ if NUMBA_AVAILABLE:
 
         :param arr_in: (np.ndarray) A single dimensional numpy array
         :param window: (int) The decay window, or 'span'
+        :param ignore_na: (bool) If True, ignore NaN values; if False, propagate NaN
         :return: (np.ndarray) The EWMA vector, same length / shape as ``arr_in``
         """
         
@@ -49,18 +50,54 @@ if NUMBA_AVAILABLE:
         # Initialize output array
         ewma_out = np.empty(len(arr_in), dtype=np.float64)
         
-        # Initialize first value
-        ewma_out[0] = arr_in[0]
-        
-        # Calculate EWMA for the rest of the array
-        for i in range(1, len(arr_in)):
-            ewma_out[i] = alpha * arr_in[i] + (1 - alpha) * ewma_out[i - 1]
+        if ignore_na:
+            # Skip NaN values mode
+            # Find first non-NaN value
+            first_valid_idx = -1
+            for i in range(len(arr_in)):
+                if not np.isnan(arr_in[i]):
+                    first_valid_idx = i
+                    break
+            
+            if first_valid_idx == -1:
+                # All values are NaN
+                ewma_out[:] = np.nan
+                return ewma_out
+            
+            # Initialize all values before first valid as NaN
+            for i in range(first_valid_idx):
+                ewma_out[i] = np.nan
+            
+            # Initialize first valid value
+            ewma_out[first_valid_idx] = arr_in[first_valid_idx]
+            
+            # Calculate EWMA for the rest, skipping NaN
+            for i in range(first_valid_idx + 1, len(arr_in)):
+                if np.isnan(arr_in[i]):
+                    ewma_out[i] = ewma_out[i - 1]  # Keep previous value
+                else:
+                    ewma_out[i] = alpha * arr_in[i] + (1 - alpha) * ewma_out[i - 1]
+        else:
+            # Propagate NaN mode (default)
+            ewma_out[0] = arr_in[0]
+            
+            # Calculate EWMA for the rest of the array
+            for i in range(1, len(arr_in)):
+                if np.isnan(arr_in[i]) or np.isnan(ewma_out[i - 1]):
+                    ewma_out[i] = np.nan
+                else:
+                    ewma_out[i] = alpha * arr_in[i] + (1 - alpha) * ewma_out[i - 1]
         
         return ewma_out
     
-    def ewma(arr_in, window):
+    def ewma(arr_in, window, ignore_na=False):
         """
         EWMA wrapper that properly handles pandas Series and other input types
+        
+        :param arr_in: Input data (array-like)
+        :param window: The decay window, or 'span'
+        :param ignore_na: If True, ignore NaN values; if False, propagate NaN (default)
+        :return: EWMA values as numpy array
         """
         # Convert to numpy array if necessary
         if hasattr(arr_in, 'values'):  # pandas Series/DataFrame
@@ -72,36 +109,40 @@ if NUMBA_AVAILABLE:
         if len(arr_in) == 0:
             return np.array([], dtype=np.float64)
         
-        return _ewma_numba(arr_in, window)
-        
-        # Initialize first value
-        ewma_out[0] = arr_in[0]
-        
-        # Calculate EWMA for the rest of the array
-        for i in range(1, len(arr_in)):
-            ewma_out[i] = alpha * arr_in[i] + (1 - alpha) * ewma_out[i - 1]
-        
-        return ewma_out
+        return _ewma_numba(arr_in, window, ignore_na)
 else:
-    def ewma(arr_in, window):
+    def ewma(arr_in, window, ignore_na=False):
         """
         Pure Python EWMA fallback when Numba is not available
+        
+        :param arr_in: Input data (array-like)
+        :param window: The decay window, or 'span'
+        :param ignore_na: If True, ignore NaN values; if False, propagate NaN (default)
+        :return: EWMA values as numpy array
         """
         # Use pandas EWMA for efficiency
         s = pd.Series(arr_in)
         alpha = 2.0 / (window + 1.0)
-        result = s.ewm(alpha=alpha, adjust=False).mean()
+        
+        if ignore_na:
+            # Pandas handles NaN skipping when dropna=True in the past, 
+            # but we need manual handling for consistency
+            result = s.ewm(alpha=alpha, adjust=False, ignore_na=ignore_na).mean()
+        else:
+            result = s.ewm(alpha=alpha, adjust=False).mean()
+        
         return result.values.astype(np.float64)
 
 
 if NUMBA_AVAILABLE:
-    def ewma_vectorized(arr_in, window):  # pragma: no cover
+    def ewma_vectorized(arr_in, window, ignore_na=False):  # pragma: no cover
         """
         Optimized vectorized version of EWMA with enhanced numerical stability.
         Uses pandas for now to avoid Numba compilation issues.
         
         :param arr_in: (np.ndarray) A single dimensional numpy array
         :param window: (int) The decay window, or 'span'
+        :param ignore_na: (bool) If True, ignore NaN values; if False, propagate NaN (default)
         :return: (np.ndarray) The EWMA vector, same length / shape as ``arr_in``
         """
         
@@ -114,25 +155,28 @@ if NUMBA_AVAILABLE:
         alpha = 2.0 / (span + 1.0)
         
         # Use pandas ewm for vectorized calculation
-        import pandas as pd
-        result = pd.Series(arr_in).ewm(span=span, adjust=True).mean()
+        if ignore_na:
+            result = pd.Series(arr_in).ewm(span=span, adjust=False, ignore_na=True).mean()
+        else:
+            result = pd.Series(arr_in).ewm(span=span, adjust=False).mean()
         return result.values.astype(np.float64)
 else:
-    def ewma_vectorized(arr_in, window):
+    def ewma_vectorized(arr_in, window, ignore_na=False):
         """
         Pure Python EWMA vectorized fallback when Numba is not available
         """
-        return ewma(arr_in, window)
+        return ewma(arr_in, window, ignore_na)
 
 
 if NUMBA_AVAILABLE:
     @jit(nopython=True, cache=True)
-    def _ewma_alpha_numba(arr_in, alpha):  # pragma: no cover
+    def _ewma_alpha_numba(arr_in, alpha, ignore_na=False):  # pragma: no cover
         """
         EWMA with direct alpha specification for better control.
         
         :param arr_in: (np.ndarray) A single dimensional numpy array
         :param alpha: (float) Smoothing parameter between 0 and 1
+        :param ignore_na: (bool) If True, ignore NaN values; if False, propagate NaN
         :return: (np.ndarray) The EWMA vector, same length / shape as ``arr_in``
         """
         
@@ -145,19 +189,56 @@ if NUMBA_AVAILABLE:
         # Initialize output array
         ewma_out = np.empty(len(arr_in), dtype=np.float64)
         
-        # Initialize first value
-        ewma_out[0] = arr_in[0]
-        
-        # Calculate EWMA
-        alpha_complement = 1.0 - alpha
-        for i in range(1, len(arr_in)):
-            ewma_out[i] = alpha * arr_in[i] + alpha_complement * ewma_out[i - 1]
+        if ignore_na:
+            # Skip NaN values mode
+            # Find first non-NaN value
+            first_valid_idx = -1
+            for i in range(len(arr_in)):
+                if not np.isnan(arr_in[i]):
+                    first_valid_idx = i
+                    break
+            
+            if first_valid_idx == -1:
+                # All values are NaN
+                ewma_out[:] = np.nan
+                return ewma_out
+            
+            # Initialize all values before first valid as NaN
+            for i in range(first_valid_idx):
+                ewma_out[i] = np.nan
+            
+            # Initialize first valid value
+            ewma_out[first_valid_idx] = arr_in[first_valid_idx]
+            
+            # Calculate EWMA
+            alpha_complement = 1.0 - alpha
+            for i in range(first_valid_idx + 1, len(arr_in)):
+                if np.isnan(arr_in[i]):
+                    ewma_out[i] = ewma_out[i - 1]  # Keep previous value
+                else:
+                    ewma_out[i] = alpha * arr_in[i] + alpha_complement * ewma_out[i - 1]
+        else:
+            # Propagate NaN mode (default)
+            ewma_out[0] = arr_in[0]
+            
+            # Calculate EWMA
+            alpha_complement = 1.0 - alpha
+            for i in range(1, len(arr_in)):
+                if np.isnan(arr_in[i]) or np.isnan(ewma_out[i - 1]):
+                    ewma_out[i] = np.nan
+                else:
+                    ewma_out[i] = alpha * arr_in[i] + alpha_complement * ewma_out[i - 1]
         
         return ewma_out
     
-    def ewma_alpha(arr_in, alpha):
+    def ewma_alpha(arr_in, alpha, ignore_na=False):
         """
         EWMA alpha wrapper that properly handles pandas Series and other input types
+        
+        :param arr_in: Input data (array-like)
+        :param alpha: (float) Smoothing parameter between 0 and 1
+        :param ignore_na: (bool) If True, ignore NaN values; if False, propagate NaN (default)
+        :return: EWMA values as numpy array
         """
         if alpha <= 0.0 or alpha > 1.0:
             raise ValueError("Alpha must be between 0 and 1")
@@ -172,26 +253,35 @@ if NUMBA_AVAILABLE:
         if len(arr_in) == 0:
             return np.array([], dtype=np.float64)
         
-        return _ewma_alpha_numba(arr_in, alpha)
+        return _ewma_alpha_numba(arr_in, alpha, ignore_na)
 else:
-    def ewma_alpha(arr_in, alpha):
+    def ewma_alpha(arr_in, alpha, ignore_na=False):
         """
         Pure Python EWMA alpha fallback when Numba is not available
+        
+        :param arr_in: Input data (array-like)
+        :param alpha: (float) Smoothing parameter between 0 and 1
+        :param ignore_na: (bool) If True, ignore NaN values; if False, propagate NaN (default)
+        :return: EWMA values as numpy array
         """
         if alpha <= 0.0 or alpha > 1.0:
             raise ValueError("Alpha must be between 0 and 1")
         
         s = pd.Series(arr_in)
-        result = s.ewm(alpha=alpha, adjust=False).mean()
+        if ignore_na:
+            result = s.ewm(alpha=alpha, adjust=False, ignore_na=True).mean()
+        else:
+            result = s.ewm(alpha=alpha, adjust=False).mean()
         return result.values.astype(np.float64)
 
 
-def ewma_halflife(arr_in, halflife):
+def ewma_halflife(arr_in, halflife, ignore_na=False):
     """
     EWMA using half-life specification (more intuitive for financial data).
     
     :param arr_in: (np.ndarray) Input array
     :param halflife: (float) Half-life in number of periods
+    :param ignore_na: (bool) If True, ignore NaN values; if False, propagate NaN (default)
     :return: (np.ndarray) The EWMA vector
     """
     
@@ -203,15 +293,16 @@ def ewma_halflife(arr_in, halflife):
     
     # Ensure proper dtype
     arr_in = np.asarray(arr_in, dtype=np.float64)
-    return ewma_alpha(arr_in, alpha)
+    return ewma_alpha(arr_in, alpha, ignore_na)
 
 
-def ewma_com(arr_in, com):
+def ewma_com(arr_in, com, ignore_na=False):
     """
     EWMA using center of mass specification.
     
     :param arr_in: (np.ndarray) Input array
     :param com: (float) Center of mass
+    :param ignore_na: (bool) If True, ignore NaN values; if False, propagate NaN (default)
     :return: (np.ndarray) The EWMA vector
     """
     
@@ -223,7 +314,7 @@ def ewma_com(arr_in, com):
     
     # Ensure proper dtype
     arr_in = np.asarray(arr_in, dtype=np.float64)
-    return ewma_alpha(arr_in, alpha)
+    return ewma_alpha(arr_in, alpha, ignore_na)
 
 
 def get_ewma_info():
